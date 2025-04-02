@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>OneDrive Uploader</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js" async defer></script>
+</head>
+<body>
+
+  <header class="header2">
+    <h1>OneDrive Uploader</h1>
+
+    <img src="DPLOGO.png" alt="Logo" class="logo">
+    
+    <!-- Hamburger Menu -->
+    <div class="hamburger-menu" onclick="toggleMenu()">&#9776;</div>
+    
+    <!-- Hamburger Menu Links -->
+<nav id="menu" class="menu">
+  <ul>
+    <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
+    <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
+  </ul>
+</nav>
+
+  </header>
+
+  <div class="container">
+    <header>
+      <br>
+      <br>
+      <br>
+      <br>
+      <div class="auth-buttons">
+        <button id="signin-button">Sign In</button>
+        <button id="signout-button" style="display:none;">Sign Out</button>
+      </div>
+    </header>
+
+    <section class="upload-section">
+      <div id="drop-zone" class="drop-zone">
+        <p>Drag and drop files here</p>
+      </div>
+      <!-- Hidden file input triggered by clicking on the drop zone -->
+      <input type="file" id="fileInput" multiple style="display: none;">
+      
+      <div class="input-group">
+        <input type="text" id="folderName">
+        <button id="upload-button">Upload Files</button>
+      </div>
+      <div class="link-actions">
+        <button id="copyLinkBtn" style="display:none;" onclick="copyLink()">Copy Link</button>
+        <span id="copyMessage" style="display:none;">Link Copied!</span>
+        <button id="openFolderBtn" style="display:none;">Open Folder</button>
+      </div>
+      <div id="fileList" class="file-list-container"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // JavaScript to toggle the visibility of the menu
+    function toggleMenu() {
+      var menu = document.getElementById("menu");
+      menu.classList.toggle("active");
+    }
+  </script>
+</body>
+</html>
