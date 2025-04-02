@@ -69,7 +69,7 @@ header h1 {
   text-transform: uppercase;
   border: none;
   border-radius: 6px;
-  background: linear-gradient(135deg, #427831, #41803e);
+  background: linear-gradient(135deg, rgba(57, 82, 50, 0.985), #447541);
   color: #f0eff2;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -81,7 +81,7 @@ header h1 {
   transform: scale(1.03);
   box-shadow: 0 4px 12px rgb(40, 75, 37);
   color: #426242;
-  background: #81c67c;
+  background: #8ec97c;
 }
 
 /* Upload Section */
@@ -160,7 +160,7 @@ header h1 {
 }
 
 .file-list-container li {
-  background: rgba(76, 125, 61, 0.205);
+  background: rgba(45, 70, 37, 0.785);
   margin-bottom: 8px;
   padding: 10px;
   border: 1px solid #444;
@@ -168,7 +168,7 @@ header h1 {
   display: flex;
   justify-content: space-between;
   font-size: 0.95em;
-  color: #2a5f31fb;
+  color: #fffffffb;
 }
 
 .file-list-container li .file-name {
@@ -176,11 +176,11 @@ header h1 {
 }
 
 .file-list-container li .file-size {
-  color: #2a5f31fb;
+  color: #fdfdfdfb;
 }
 
 .folderName{
-  color: #1b1e2f;
+  color: #ffffff;
 }
 
 
@@ -237,7 +237,7 @@ header h1 {
 
 /* Hover effect for the menu items */
 .menu ul li:hover {
-  background-color: #497246; /* Change background on hover */
+  background-color: #3b5a39ee; /* Change background on hover */
   cursor: pointer; /* Change cursor to pointer on hover */
 }
 
@@ -283,5 +283,7 @@ header h1 {
   color: #3c502e; /* Change this to the color of your choice */
   opacity: 1; /* Make sure the placeholder is fully visible (by default, placeholders may have reduced opacity) */
   text-align: center;
+  font-size: 0.7em;
 }
+
 

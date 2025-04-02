@@ -104,7 +104,7 @@ function updateFileList() {
                  </li>`;
   });
   listHTML += '</ul>';
-  fileListContainer.innerHTML = `<h3>FILES</h3>` + listHTML;
+  fileListContainer.innerHTML = listHTML;
 }
 
 /* ---------------- File Upload ---------------- */
