@@ -11,7 +11,7 @@ const msalConfig = {
     // Use the environment variable for redirectUri. 
     // When developing locally, set REDIRECT_URI to your ngrok URL in your .env file.
     // In production on Render, set REDIRECT_URI to your Render app's URL.
-    redirectUri: window.env.REDIRECT_URI || 'http://localhost:3000/callback'
+    redirectUri: window.REDIRECT_URI || 'http://localhost:3000/callback'
   }
 };
 
