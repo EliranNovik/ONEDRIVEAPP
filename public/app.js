@@ -8,7 +8,10 @@ const msalConfig = {
   auth: {
     clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",  
     authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
-    redirectUri: "https://bd50-212-199-32-162.ngrok-free.app"
+    // Use the environment variable for redirectUri. 
+    // When developing locally, set REDIRECT_URI to your ngrok URL in your .env file.
+    // In production on Render, set REDIRECT_URI to your Render app's URL.
+    redirectUri: process.env.REDIRECT_URI || 'http://localhost:3000/callback'
   }
 };
 
