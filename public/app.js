@@ -8,9 +8,7 @@ const msalConfig = {
   auth: {
     clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",  
     authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
-    // Use the environment variable for redirectUri. 
-    // When developing locally, set REDIRECT_URI to your ngrok URL in your .env file.
-    // In production on Render, set REDIRECT_URI to your Render app's URL.
+    // Use the environment variable for redirectUri (set via window.REDIRECT_URI in your HTML)
     redirectUri: window.REDIRECT_URI || 'http://localhost:3000/callback'
   }
 };
@@ -27,28 +25,30 @@ document.getElementById('signin-button').onclick = function () {
   msalInstance.loginPopup({ scopes: graphScopes })
     .then(loginResponse => {
       msalInstance.setActiveAccount(loginResponse.account);
+      console.log("Login successful:", loginResponse);
       msalInstance.acquireTokenSilent({ scopes: graphScopes, account: loginResponse.account })
         .then(tokenResponse => {
           accessToken = tokenResponse.accessToken;
+          console.log("Access token acquired:", accessToken);
           document.getElementById('signin-button').style.display = 'none';
+          // Instead of signing out, we’re using the sign-out button to eventually redirect the user to OneDrive.
           document.getElementById('signout-button').style.display = 'inline-block';
         })
         .catch(error => {
+          console.error("Token acquisition error:", error);
           alert("Error acquiring token. See console for details.");
         });
     })
     .catch(error => {
+      console.error("Login error:", error);
       alert("Login failed. See console for details.");
     });
 };
 
-// Sign out function
+// Sign out function now redirects to OneDrive instead of logging out.
+// Replace the URL below with your OneDrive for Business URL (for example, "https://YOUR_TENANT-my.sharepoint.com")
 document.getElementById('signout-button').onclick = function () {
-  msalInstance.logoutPopup().then(() => {
-    accessToken = null;
-    document.getElementById('signin-button').style.display = 'inline-block';
-    document.getElementById('signout-button').style.display = 'none';
-  });
+  window.location.href = "https://YOUR_TENANT-my.sharepoint.com";
 };
 
 /* ---------------- File Selection & Drag-Drop ---------------- */
@@ -145,6 +145,8 @@ document.getElementById('upload-button').onclick = function () {
   })
   .then(response => response.json())
   .then(folderData => {
+    console.log("Folder created:", folderData);
+    // Save the webUrl as a fallback sharing link (if needed)
     createdFolderLink = folderData.webUrl;
     
     // Create a sharing link (edit, anonymous) for the new folder
@@ -161,6 +163,7 @@ document.getElementById('upload-button').onclick = function () {
     })
     .then(response => response.json())
     .then(linkData => {
+      console.log("Sharing link created:", linkData);
       createdFolderLink = linkData.link.webUrl;
       
       // Show "Copy Link" and "Open Folder" buttons
@@ -170,7 +173,7 @@ document.getElementById('upload-button').onclick = function () {
       openFolderBtn.style.display = 'inline-block';
       
       copyBtn.onclick = function() {
-        copyLink(); // Use the updated copyLink function
+        copyLink();
       };
       
       openFolderBtn.onclick = function() {
@@ -202,7 +205,7 @@ document.getElementById('upload-button').onclick = function () {
       });
     });
     
-    console.log("Folder created, sharing link set, and file upload initiated. Check console for details.");
+    alert("Folder created, sharing link set, and file upload initiated. Check console for details.");
     // Clear the file list and reset input fields
     fileListContainer.innerHTML = '';
     filesToUpload = [];
@@ -218,19 +221,14 @@ document.getElementById('upload-button').onclick = function () {
 
 /* ---------------- Copy Link Function with "Copied!" Message ---------------- */
 function copyLink() {
-  const link = createdFolderLink; // Get the link of the created folder
-
+  const link = createdFolderLink;
   if (link) {
-    // Copy the link to the clipboard
     navigator.clipboard.writeText(link)
       .then(() => {
-        // Show the "Copied!" message
         const copyMessage = document.getElementById("copyMessage");
-        copyMessage.classList.add("show"); // Add the 'show' class to display the message
-
-        // Hide the "Copied!" message after 2 seconds
+        copyMessage.classList.add("show");
         setTimeout(() => {
-          copyMessage.classList.remove("show"); // Remove the 'show' class to fade out the message
+          copyMessage.classList.remove("show");
         }, 2000);
       })
       .catch(err => {
@@ -242,3 +240,56 @@ function copyLink() {
     alert("No link available to copy. Please try again.");
   }
 }
+
+/* ---------------- Meeting Modal & Meeting Form Handling ---------------- */
+
+// Show meeting modal when "Create Meeting" is clicked
+document.getElementById('create-meeting-link').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('meetingModal').style.display = 'block';
+});
+
+// Close meeting modal when user clicks on the close button (x)
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('meetingModal').style.display = 'none';
+});
+
+// Close meeting modal if user clicks outside the modal content
+window.addEventListener('click', (event) => {
+  if (event.target === document.getElementById('meetingModal')) {
+    document.getElementById('meetingModal').style.display = 'none';
+  }
+});
+
+// Handle meeting form submission
+document.getElementById('meetingForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const topic = document.getElementById('topic').value;
+  const dateTime = document.getElementById('dateTime').value;
+  
+  try {
+    const response = await fetch("/teams/create-meeting", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic, dateTime })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      const meetingLinkHTML = `<a href="${data.meetingLink}" target="_blank">Join Meeting</a>`;
+      document.getElementById('meetingLinkContainer').innerHTML = meetingLinkHTML;
+      document.getElementById('copyMeetingLinkBtn').style.display = 'inline-block';
+      
+      document.getElementById('copyMeetingLinkBtn').onclick = function() {
+        navigator.clipboard.writeText(data.meetingLink)
+          .then(() => { alert("Meeting link copied to clipboard!"); })
+          .catch(() => { alert("Failed to copy the link. Please try manually."); });
+      };
+    } else {
+      alert("Error creating meeting");
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    alert("Error creating meeting");
+  }
+});

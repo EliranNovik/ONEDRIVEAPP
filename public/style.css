@@ -7,7 +7,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #1b1e2f url('NOTEBOOK.jpg') center fixed;
+  background: #1b1e2f url('pic2.jpg') center fixed;
   background-size: cover;
   color: #fff;
 }
@@ -99,7 +99,7 @@ header h1 {
   align-items: center;
   justify-content: center;
   margin-bottom: 20px;
-  background: rgba(76, 125, 61, 0.205);
+  background: rgba(250, 250, 250, 0.496);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
@@ -110,7 +110,7 @@ header h1 {
 }
 
 .drop-zone.hover {
-  background-color: rgb(246, 246, 247);
+  background-color: rgba(111, 229, 133, 0.519);
   border-color: #28472b;
 }
 
@@ -128,7 +128,7 @@ header h1 {
   padding: 10px;
   border: 1px solid #253a25;
   border-radius: 4px;
-  background: rgba(57, 82, 50, 0.205);
+  background: rgba(250, 250, 250, 0.496);
   color: #2a4227;
   font-size: 1.6em;
   text-align: center;
@@ -286,4 +286,39 @@ header h1 {
   font-size: 0.7em;
 }
 
+/* Modal Styles */
+.modal {
+  display: none !important; /* Force the modal to be hidden by default */
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: rgba(0, 0, 0, 0.4);
+}
 
+.modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 500px;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}

@@ -8,32 +8,27 @@
 </head>
 <body>
 
- <script> window.REDIRECT_URI = "https://onedriveapp.onrender.com"; </script>
+  <script> window.REDIRECT_URI = "http://localhost:3000/onedriveapp"; </script>
 
   <header class="header2">
     <h1>OneDrive Uploader</h1>
-
     <img src="DPLOGO.png" alt="Logo" class="logo">
     
     <!-- Hamburger Menu -->
     <div class="hamburger-menu" onclick="toggleMenu()">&#9776;</div>
     
     <!-- Hamburger Menu Links -->
-<nav id="menu" class="menu">
-  <ul>
-    <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
-    <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
-  </ul>
-</nav>
-
+    <nav id="menu" class="menu">
+      <ul>
+        <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
+        <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
+      </ul>
+    </nav>
   </header>
 
   <div class="container">
     <header>
-      <br>
-      <br>
-      <br>
-      <br>
+      <br><br><br><br>
       <div class="auth-buttons">
         <button id="signin-button">Sign In</button>
         <button id="signout-button" style="display:none;">Sign Out</button>
@@ -60,14 +55,57 @@
     </section>
   </div>
 
+  <!-- Meeting Modal (hidden by default by CSS) -->
+  <div id="meetingModal" class="modal">
+    <div class="modal-content">
+      <span id="modal-close" class="close">&times;</span>
+      <h2>Create a Meeting</h2>
+      <form id="meetingForm">
+        <label for="topic">Meeting Topic:</label>
+        <input type="text" id="topic" required>
+        <br><br>
+        <label for="dateTime">Date & Time:</label>
+        <input type="datetime-local" id="dateTime" required>
+        <br><br>
+        <button type="submit">Generate Meeting Link</button>
+      </form>
+      <div id="meetingLinkContainer"></div>
+      <button id="copyMeetingLinkBtn" style="display:none;">Copy Meeting Link</button>
+    </div>
+  </div>
+
   <script src="app.js"></script>
-<script>
-    // JavaScript to toggle the visibility of the menu
+  <script>
+    // Toggle hamburger menu visibility
     function toggleMenu() {
       var menu = document.getElementById("menu");
       menu.classList.toggle("active");
     }
-   
+
+    // Use DOMContentLoaded to ensure elements are available before attaching events
+    document.addEventListener("DOMContentLoaded", function() {
+      // Meeting Modal Logic
+      
+      // Show meeting modal when "Create Meeting" is clicked
+      document.getElementById("create-meeting-link").addEventListener("click", function(e) {
+        e.preventDefault();
+        console.log("Create Meeting clicked");
+        document.getElementById("meetingModal").style.display = "block";
+      });
+      
+      // Close modal when clicking on the close button (x)
+      document.getElementById("modal-close").addEventListener("click", function() {
+        document.getElementById("meetingModal").style.display = "none";
+      });
+      
+      // Close modal when clicking outside the modal content
+      window.addEventListener("click", function(event) {
+        var modal = document.getElementById("meetingModal");
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      });
+    });
   </script>
 </body>
 </html>
