@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create a Meeting</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="content-container">
+    <h1>Create a Meeting</h1>
+    <% if (!session || !session.accessToken) { %>
+      <p>Please <a href="/teams/login">login</a> to create a meeting.</p>
+    <% } else { %>
+      <form id="meetingForm">
+        <div>
+          <label for="topic">Meeting Topic:</label>
+          <input type="text" id="topic" required placeholder="Enter meeting topic...">
+        </div>
+        <div>
+          <label for="dateTime">Date & Time:</label>
+          <input type="datetime-local" id="dateTime" required>
+        </div>
+        <button type="submit">Generate Link</button>
+      </form>
+      <div id="meetingLinkContainer" class="button-row" style="display:none;">
+        <a id="joinLink" href="#" target="_blank">
+          <button type="button">Join Meeting</button>
+        </a>
+        <button id="copyButton" type="button">Copy Link</button>
+      </div>
+      <p><a href="/teams/logout">Logout</a></p>
+    <% } %>
+  </div>
+  
+  <script>
+    document.getElementById("meetingForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const topic = document.getElementById("topic").value;
+      const dateTime = document.getElementById("dateTime").value;
+      try {
+        const response = await fetch("/teams/create-meeting", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, dateTime })
+        });
+        const data = await response.json();
+        if (data.success) {
+          const joinLink = document.getElementById("joinLink");
+          joinLink.href = data.meetingLink;
+          document.getElementById("meetingLinkContainer").style.display = "block";
+          document.getElementById("copyButton").onclick = () => {
+            navigator.clipboard.writeText(data.meetingLink)
+              .then(() => alert("Meeting link copied to clipboard!"))
+              .catch(err => console.error("Copy failed", err));
+          };
+        } else {
+          alert("Error creating meeting");
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        alert("Error creating meeting");
+      }
+    });
+  </script>
+</body>
+</html>

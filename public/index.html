@@ -8,7 +8,7 @@
 </head>
 <body>
 
-  <script> window.REDIRECT_URI = "https://onedriveapp.onrender.com"; </script>
+  <script> window.REDIRECT_URI = "https://onedriveapp.onrender.com/"; </script>
 
   <header class="header2">
     <h1>OneDrive Uploader</h1>
@@ -23,6 +23,8 @@
         <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
         <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
         <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
+        <!-- Simply navigate to /teams for meeting creation -->
+        <li><a href="/teams" id="create-meeting-link">Create a Meeting</a></li>
       </ul>
     </nav>
   </header>
@@ -48,7 +50,7 @@
         <button id="upload-button">Upload Files</button>
       </div>
       <div class="link-actions">
-        <button id="copyLinkBtn" style="display:none;" onclick="copyLink()">Copy Link</button>
+        <button id="copyLinkBtn" style="display:none;">Copy Link</button>
         <span id="copyMessage" style="display:none;">Link Copied!</span>
         <button id="openFolderBtn" style="display:none;">Open Folder</button>
       </div>
@@ -56,25 +58,7 @@
     </section>
   </div>
 
-  <!-- Meeting Modal (hidden by default by CSS) -->
-  <div id="meetingModal" class="modal">
-    <div class="modal-content">
-      <span id="modal-close" class="close">&times;</span>
-      <h2>Create a Meeting</h2>
-      <form id="meetingForm">
-        <label for="topic">Meeting Topic:</label>
-        <input type="text" id="topic" required>
-        <br><br>
-        <label for="dateTime">Date & Time:</label>
-        <input type="datetime-local" id="dateTime" required>
-        <br><br>
-        <button type="submit">Generate Meeting Link</button>
-      </form>
-      <div id="meetingLinkContainer"></div>
-      <button id="copyMeetingLinkBtn" style="display:none;">Copy Meeting Link</button>
-    </div>
-  </div>
-
+  <!-- Removed meeting modal markup and meeting-related scripts -->
   <script src="app.js"></script>
   <script>
     // Toggle hamburger menu visibility
@@ -82,31 +66,6 @@
       var menu = document.getElementById("menu");
       menu.classList.toggle("active");
     }
-
-    // Use DOMContentLoaded to ensure elements are available before attaching events
-    document.addEventListener("DOMContentLoaded", function() {
-      // Meeting Modal Logic
-      
-      // Show meeting modal when "Create Meeting" is clicked
-      document.getElementById("create-meeting-link").addEventListener("click", function(e) {
-        e.preventDefault();
-        console.log("Create Meeting clicked");
-        document.getElementById("meetingModal").style.display = "block";
-      });
-      
-      // Close modal when clicking on the close button (x)
-      document.getElementById("modal-close").addEventListener("click", function() {
-        document.getElementById("meetingModal").style.display = "none";
-      });
-      
-      // Close modal when clicking outside the modal content
-      window.addEventListener("click", function(event) {
-        var modal = document.getElementById("meetingModal");
-        if (event.target == modal) {
-          modal.style.display = "none";
-        }
-      });
-    });
   </script>
 </body>
 </html>
