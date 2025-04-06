@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <title>OneDrive Uploader</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js" async defer></script>
+  <script src="https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js"></script>
 </head>
 <body>
 
-  <script> window.REDIRECT_URI = "https://onedriveapp.onrender.com/"; </script>
+  <script> window.REDIRECT_URI = "http://localhost:3000/onedriveapp"; </script>
 
   <header class="header2">
     <h1>OneDrive Uploader</h1>
@@ -34,7 +34,7 @@
       <br><br><br><br>
       <div class="auth-buttons">
         <button id="signin-button">Sign In</button>
-        <button id="signout-button" style="display:none;">Sign Out</button>
+        <button id="signout-button" style="display:none;">My OneDrive</button>
       </div>
     </header>
 

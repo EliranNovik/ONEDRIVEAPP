@@ -7,6 +7,26 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <!-- Header with Hamburger Menu -->
+  <header class="header2">
+    <h1>Teams Meeting Creator</h1>
+    <img src="/DPLOGO.png" alt="Logo" class="logo">
+    
+    <!-- Hamburger Menu Icon -->
+    <div class="hamburger-menu" onclick="toggleMenu()">&#9776;</div>
+    
+    <!-- Hamburger Menu Links -->
+    <nav id="menu" class="menu">
+      <ul>
+        <li><a href="/" target="_self">Home</a></li>
+        <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
+        <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
+        <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Main Content Container -->
   <div class="content-container">
     <h1>Create a Meeting</h1>
     <% if (!session || !session.accessToken) { %>
@@ -33,11 +53,27 @@
     <% } %>
   </div>
   
+  <!-- Inline Script for Hamburger Menu and Modal -->
   <script>
+    // Toggle hamburger menu visibility
+    function toggleMenu() {
+      var menu = document.getElementById("menu");
+      menu.classList.toggle("active");
+    }
+    
+    // Meeting Modal Logic (if you decide later to use a modal instead of a separate page)
+    document.addEventListener("DOMContentLoaded", function() {
+      // Example: If you want "Create Meeting" to open a modal rather than navigate,
+      // you can add event listeners here.
+      // For now, the "Create Meeting" link in the menu points to /teams (current page).
+    });
+    
+    // Handle meeting form submission
     document.getElementById("meetingForm")?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const topic = document.getElementById("topic").value;
       const dateTime = document.getElementById("dateTime").value;
+      
       try {
         const response = await fetch("/teams/create-meeting", {
           method: "POST",
@@ -49,7 +85,7 @@
           const joinLink = document.getElementById("joinLink");
           joinLink.href = data.meetingLink;
           document.getElementById("meetingLinkContainer").style.display = "block";
-          document.getElementById("copyButton").onclick = () => {
+          document.getElementById("copyButton").onclick = function() {
             navigator.clipboard.writeText(data.meetingLink)
               .then(() => alert("Meeting link copied to clipboard!"))
               .catch(err => console.error("Copy failed", err));
