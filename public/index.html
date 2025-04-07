@@ -2,9 +2,12 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>OneDrive Uploader</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js"></script>
+  <!-- Add Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
@@ -38,24 +41,33 @@
       </div>
     </header>
 
-    <section class="upload-section">
-      <div id="drop-zone" class="drop-zone">
-        <p>Drag and drop files here</p>
-      </div>
-      <!-- Hidden file input triggered by clicking on the drop zone -->
-      <input type="file" id="fileInput" multiple style="display: none;">
+    <div class="content-container">
+      <h2>Decker Pex Levi Law Office</h2>
       
-      <div class="input-group">
-        <input type="text" id="folderName" placeholder="Enter folder name...">
-        <button id="upload-button">Upload Files</button>
-      </div>
-      <div class="link-actions">
-        <button id="copyLinkBtn" style="display:none;">Copy Link</button>
-        <span id="copyMessage" style="display:none;">Link Copied!</span>
-        <button id="openFolderBtn" style="display:none;">Open Folder</button>
-      </div>
-      <div id="fileList" class="file-list-container"></div>
-    </section>
+      <section class="upload-section">
+        <div id="drop-zone" class="drop-zone">
+          <div class="drop-zone-content">
+            <p class="drop-text">Drag and drop files here</p>
+            <p class="drop-subtext">Click anywhere in this area to select files</p>
+          </div>
+        </div>
+        <!-- Hidden file input triggered by clicking on the drop zone -->
+        <input type="file" id="fileInput" multiple style="display: none;">
+        
+        <div class="input-group">
+          <div class="folder-input-container">
+            <input type="text" id="folderName" placeholder="Enter folder name...">
+          </div>
+          <button id="upload-button"><i class="fas fa-upload"></i> Upload Files</button>
+        </div>
+        <div class="link-actions">
+          <button id="copyLinkBtn" style="display:none;"><i class="fas fa-copy"></i> Copy Link</button>
+          <span id="copyMessage" style="display:none;">Link Copied!</span>
+          <button id="openFolderBtn" style="display:none;"><i class="fas fa-folder-open"></i> Open Folder</button>
+        </div>
+        <div id="fileList" class="file-list-container"></div>
+      </section>
+    </div>
   </div>
 
   <!-- Removed meeting modal markup and meeting-related scripts -->
@@ -64,8 +76,27 @@
     // Toggle hamburger menu visibility
     function toggleMenu() {
       var menu = document.getElementById("menu");
+      var hamburger = document.querySelector('.hamburger-menu');
       menu.classList.toggle("active");
+      hamburger.classList.toggle("active");
+      
+      // Add animation delay to menu items
+      const menuItems = menu.querySelectorAll('li');
+      menuItems.forEach((item, index) => {
+        item.style.setProperty('--i', index);
+      });
     }
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const menu = document.getElementById('menu');
+      const hamburger = document.querySelector('.hamburger-menu');
+      
+      if (!menu.contains(event.target) && !hamburger.contains(event.target) && menu.classList.contains('active')) {
+        menu.classList.remove('active');
+        hamburger.classList.remove('active');
+      }
+    });
   </script>
 </body>
 </html>

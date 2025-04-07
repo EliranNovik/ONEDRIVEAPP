@@ -2,6 +2,7 @@
 let filesToUpload = [];
 let accessToken = null;
 let createdFolderLink = '';
+let currentAccount = null; // Store the current account
 
 // MSAL configuration for your OneDrive (Microsoft Graph) app
 const msalConfig = {
@@ -9,7 +10,7 @@ const msalConfig = {
     clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",  
     authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
     // Use the environment variable for redirectUri (set via window.REDIRECT_URI in your HTML)
-    redirectUri: window.REDIRECT_URI || 'http://localhost:3000/callback'
+    redirectUri: window.REDIRECT_URI || 'https://onedriveapp.onrender.com'
   }
 };
 
@@ -39,12 +40,65 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('signin-button').style.display = 'none';
         document.getElementById('signout-button').style.display = 'inline-block';
         console.log("Token retrieved from session:", accessToken);
+        
+        // Try to get the account from MSAL
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+          currentAccount = accounts[0];
+          msalInstance.setActiveAccount(currentAccount);
+          console.log("Account retrieved from MSAL:", currentAccount);
+        } else {
+          // If no accounts found but we have a token, try to handle the redirect
+          handleRedirectPromise();
+        }
       }
     })
     .catch(err => {
       console.error("Error fetching token from session:", err);
     });
 });
+
+// Handle redirect promise to complete authentication
+async function handleRedirectPromise() {
+  try {
+    const response = await msalInstance.handleRedirectPromise();
+    if (response !== null) {
+      // User just signed in
+      currentAccount = response.account;
+      msalInstance.setActiveAccount(currentAccount);
+      console.log("User signed in via redirect:", currentAccount);
+      
+      // Get a token
+      const tokenResponse = await msalInstance.acquireTokenSilent({ 
+        scopes: graphScopes, 
+        account: currentAccount 
+      });
+      
+      accessToken = tokenResponse.accessToken;
+      console.log("Access token acquired after redirect:", accessToken);
+      
+      // Update UI
+      document.getElementById('signin-button').style.display = 'none';
+      document.getElementById('signout-button').style.display = 'inline-block';
+      
+      // Save the token to the server session
+      const saveResponse = await fetch('/set-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: accessToken })
+      });
+      
+      const saveData = await saveResponse.json();
+      if (saveData.success) {
+        console.log("Token saved in session after redirect.");
+      } else {
+        console.error("Error saving token after redirect:", saveData.message);
+      }
+    }
+  } catch (error) {
+    console.error("Error handling redirect:", error);
+  }
+}
 
 /* ---------------- Authentication ---------------- */
 
@@ -57,9 +111,10 @@ document.getElementById('signin-button').onclick = function () {
     // On desktop, use popup-based authentication
     msalInstance.loginPopup({ scopes: graphScopes })
       .then(loginResponse => {
-        msalInstance.setActiveAccount(loginResponse.account);
+        currentAccount = loginResponse.account; // Store the account
+        msalInstance.setActiveAccount(currentAccount);
         console.log("Login successful:", loginResponse);
-        msalInstance.acquireTokenSilent({ scopes: graphScopes, account: loginResponse.account })
+        msalInstance.acquireTokenSilent({ scopes: graphScopes, account: currentAccount })
           .then(tokenResponse => {
             accessToken = tokenResponse.accessToken;
             console.log("Access token acquired:", accessToken);
@@ -96,49 +151,74 @@ document.getElementById('signin-button').onclick = function () {
 // Sign out function now redirects to OneDrive instead of logging out.
 // Replace the URL below with your OneDrive for Business URL.
 document.getElementById('signout-button').onclick = function () {
-  window.location.href = "https://lawdecker-my.sharepoint.com";
+  window.open("https://lawdecker-my.sharepoint.com", "_blank");
 };
 
 /* ---------------- File Selection & Drag-Drop ---------------- */
 
+// Initialize drop zone elements
 const dropZone = document.getElementById('drop-zone');
 const fileListContainer = document.getElementById('fileList');
 const fileInput = document.getElementById('fileInput');
 
-// When clicking on the drop zone, trigger file input click
-if (fileInput) {
-  dropZone.addEventListener('click', () => {
-    fileInput.click();
-  });
-  
-  // Update file list when files are selected via file input
-  fileInput.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-      filesToUpload = files;
-      updateFileList();
+// Set up drop zone event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  if (dropZone && fileInput) {
+    // Make the entire drop zone clickable to trigger file selection
+    dropZone.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation(); // Prevent event bubbling
+      fileInput.click();
+    });
+    
+    // Handle file selection via input
+    fileInput.addEventListener('change', function() {
+      // Visual feedback when files are selected
+      if (this.files.length > 0) {
+        dropZone.classList.add('files-selected');
+        // Update the filesToUpload array
+        filesToUpload = Array.from(this.files);
+        updateFileList();
+      } else {
+        dropZone.classList.remove('files-selected');
+        filesToUpload = [];
+        updateFileList();
+      }
+    });
+    
+    // Drag-and-drop events
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('hover');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('hover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('hover');
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) {
+        dropZone.classList.add('files-selected');
+        filesToUpload = files;
+        updateFileList();
+      }
+    });
+    
+    // Reset file input when files are uploaded
+    const uploadButton = document.getElementById('upload-button');
+    if (uploadButton) {
+      uploadButton.addEventListener('click', function() {
+        // This will be called after the upload is complete
+        setTimeout(function() {
+          fileInput.value = '';
+          dropZone.classList.remove('files-selected');
+        }, 1000);
+      });
     }
-  });
-}
-
-// Drag-and-drop events
-dropZone.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  dropZone.classList.add('hover');
-});
-
-dropZone.addEventListener('dragleave', (e) => {
-  e.preventDefault();
-  dropZone.classList.remove('hover');
-});
-
-dropZone.addEventListener('drop', (e) => {
-  e.preventDefault();
-  dropZone.classList.remove('hover');
-  const files = Array.from(e.dataTransfer.files);
-  if (files.length > 0) {
-    filesToUpload = files;
-    updateFileList();
   }
 });
 
@@ -155,10 +235,144 @@ function updateFileList() {
   fileListContainer.innerHTML = listHTML;
 }
 
+/* ---------------- Token Refresh Function ---------------- */
+async function refreshTokenIfNeeded() {
+  try {
+    console.log("Attempting to refresh token...");
+    
+    // First, try to handle any redirect promise
+    await handleRedirectPromise();
+    
+    // If we have a stored account, use it
+    if (currentAccount) {
+      console.log("Using stored account:", currentAccount);
+      try {
+        const tokenResponse = await msalInstance.acquireTokenSilent({ 
+          scopes: graphScopes, 
+          account: currentAccount 
+        });
+        
+        // Update the access token
+        accessToken = tokenResponse.accessToken;
+        console.log("Token refreshed successfully");
+        
+        // Save the new token to the server session
+        const response = await fetch('/set-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: accessToken })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          console.log("New token saved in session.");
+          return true;
+        } else {
+          console.error("Error saving new token:", data.message);
+          return false;
+        }
+      } catch (error) {
+        console.error("Error acquiring token silently:", error);
+        // If silent token acquisition fails, try interactive
+        return await acquireTokenInteractive();
+      }
+    } else {
+      // Try to get the account from MSAL
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length === 0) {
+        console.error("No account found. Please sign in again.");
+        // Try to sign in interactively
+        return await acquireTokenInteractive();
+      }
+      
+      // Use the first account or try to get the active account
+      currentAccount = msalInstance.getActiveAccount() || accounts[0];
+      msalInstance.setActiveAccount(currentAccount);
+      console.log("Using account from MSAL:", currentAccount);
+      
+      try {
+        const tokenResponse = await msalInstance.acquireTokenSilent({ 
+          scopes: graphScopes, 
+          account: currentAccount 
+        });
+        
+        // Update the access token
+        accessToken = tokenResponse.accessToken;
+        console.log("Token refreshed successfully");
+        
+        // Save the new token to the server session
+        const response = await fetch('/set-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: accessToken })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          console.log("New token saved in session.");
+          return true;
+        } else {
+          console.error("Error saving new token:", data.message);
+          return false;
+        }
+      } catch (error) {
+        console.error("Error acquiring token silently:", error);
+        // If silent token acquisition fails, try interactive
+        return await acquireTokenInteractive();
+      }
+    }
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    // If all else fails, prompt the user to sign in again
+    alert("Your session has expired. Please sign in again.");
+    document.getElementById('signin-button').style.display = 'inline-block';
+    document.getElementById('signout-button').style.display = 'none';
+    return false;
+  }
+}
+
+// Helper function to acquire token interactively
+async function acquireTokenInteractive() {
+  try {
+    console.log("Attempting interactive token acquisition...");
+    const loginResponse = await msalInstance.loginPopup({ scopes: graphScopes });
+    currentAccount = loginResponse.account;
+    msalInstance.setActiveAccount(currentAccount);
+    
+    const tokenResponse = await msalInstance.acquireTokenSilent({ 
+      scopes: graphScopes, 
+      account: currentAccount 
+    });
+    
+    // Update the access token
+    accessToken = tokenResponse.accessToken;
+    console.log("Token acquired interactively");
+    
+    // Save the new token to the server session
+    const response = await fetch('/set-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: accessToken })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      console.log("New token saved in session.");
+      return true;
+    } else {
+      console.error("Error saving new token:", data.message);
+      return false;
+    }
+  } catch (error) {
+    console.error("Error acquiring token interactively:", error);
+    return false;
+  }
+}
+
 /* ---------------- File Upload ---------------- */
 
 // Upload files to OneDrive under a new folder created in the root directory
-document.getElementById('upload-button').onclick = function () {
+document.getElementById('upload-button').onclick = async function () {
   if (filesToUpload.length === 0) {
     alert('Please drag and drop at least one file.');
     return;
@@ -178,26 +392,47 @@ document.getElementById('upload-button').onclick = function () {
   // Create new folder in the root directory of OneDrive
   let createFolderEndpoint = `https://graph.microsoft.com/v1.0/me/drive/root/children`;
   
-  fetch(createFolderEndpoint, {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + accessToken,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      name: folderName,
-      folder: {},
-      "@microsoft.graph.conflictBehavior": "rename"
-    })
-  })
-  .then(response => response.json())
-  .then(folderData => {
+  try {
+    const folderResponse = await fetch(createFolderEndpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + accessToken,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: folderName,
+        folder: {},
+        "@microsoft.graph.conflictBehavior": "rename"
+      })
+    });
+    
+    // Check if the response indicates an expired token
+    if (folderResponse.status === 401) {
+      const errorData = await folderResponse.json();
+      if (errorData.error && errorData.error.code === "InvalidAuthenticationToken") {
+        // Try to refresh the token
+        const refreshed = await refreshTokenIfNeeded();
+        if (refreshed) {
+          // Retry the folder creation with the new token
+          return document.getElementById('upload-button').onclick();
+        } else {
+          return; // Stop if token refresh failed
+        }
+      }
+    }
+    
+    // If we get here, either the request succeeded or it's a different error
+    if (!folderResponse.ok) {
+      throw new Error(`API error: ${folderResponse.status}`);
+    }
+    
+    const folderData = await folderResponse.json();
     console.log("Folder created:", folderData);
     // Save the webUrl as a fallback sharing link (if needed)
     createdFolderLink = folderData.webUrl;
     
     // Create a sharing link (edit, anonymous) for the new folder
-    fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${folderData.id}/createLink`, {
+    const linkResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${folderData.id}/createLink`, {
       method: "POST",
       headers: {
         "Authorization": "Bearer " + accessToken,
@@ -207,10 +442,33 @@ document.getElementById('upload-button').onclick = function () {
         type: "edit",
         scope: "anonymous"
       })
-    })
-    .then(response => response.json())
-    .then(linkData => {
-      console.log("Sharing link created:", linkData);
+    });
+    
+    // Check if the response indicates an expired token
+    if (linkResponse.status === 401) {
+      const errorData = await linkResponse.json();
+      if (errorData.error && errorData.error.code === "InvalidAuthenticationToken") {
+        // Try to refresh the token
+        const refreshed = await refreshTokenIfNeeded();
+        if (refreshed) {
+          // Retry the link creation with the new token
+          return document.getElementById('upload-button').onclick();
+        } else {
+          return; // Stop if token refresh failed
+        }
+      }
+    }
+    
+    // If we get here, either the request succeeded or it's a different error
+    if (!linkResponse.ok) {
+      throw new Error(`API error: ${linkResponse.status}`);
+    }
+    
+    const linkData = await linkResponse.json();
+    console.log("Sharing link created:", linkData);
+    
+    // Check if linkData.link exists before accessing webUrl
+    if (linkData && linkData.link && linkData.link.webUrl) {
       createdFolderLink = linkData.link.webUrl;
       
       // Show "Copy Link" and "Open Folder" buttons
@@ -226,44 +484,62 @@ document.getElementById('upload-button').onclick = function () {
       openFolderBtn.onclick = function() {
         window.open(createdFolderLink, '_blank');
       };
-    })
-    .catch(error => {
-      console.error("Error creating sharing link:", error);
-      alert("Error setting folder sharing. Check the console for details.");
-    });
-
+    } else {
+      console.error("Invalid response format from createLink API:", linkData);
+      // If we have an error object, log its details
+      if (linkData.error) {
+        console.error("API Error details:", linkData.error);
+        alert(`Error creating sharing link: ${linkData.error.message || 'Unknown error'}`);
+      } else {
+        alert("Error: Could not create a sharing link. The response format was unexpected.");
+      }
+    }
+    
     // Upload each file into the newly created folder
-    filesToUpload.forEach(file => {
+    for (const file of filesToUpload) {
       const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${folderData.id}:/${encodeURIComponent(file.name)}:/content`;
-      fetch(uploadUrl, {
+      const uploadResponse = await fetch(uploadUrl, {
         method: "PUT",
         headers: {
           "Authorization": "Bearer " + accessToken,
           "Content-Type": file.type || "application/octet-stream"
         },
         body: file
-      })
-      .then(response => response.json())
-      .then(uploadData => {
-        console.log(`File ${file.name} uploaded successfully:`, uploadData);
-      })
-      .catch(error => {
-        console.error(`Error uploading file ${file.name}:`, error);
       });
-    });
+      
+      // Check if the response indicates an expired token
+      if (uploadResponse.status === 401) {
+        const errorData = await uploadResponse.json();
+        if (errorData.error && errorData.error.code === "InvalidAuthenticationToken") {
+          // Try to refresh the token
+          const refreshed = await refreshTokenIfNeeded();
+          if (refreshed) {
+            // Retry the file upload with the new token
+            return document.getElementById('upload-button').onclick();
+          } else {
+            return; // Stop if token refresh failed
+          }
+        }
+      }
+      
+      // If we get here, either the request succeeded or it's a different error
+      if (!uploadResponse.ok) {
+        throw new Error(`API error: ${uploadResponse.status}`);
+      }
+      
+      const uploadData = await uploadResponse.json();
+      console.log(`File ${file.name} uploaded successfully:`, uploadData);
+    }
     
-    console.log("Folder created, sharing link set, and file upload initiated. Check console for details.");
     // Clear the file list and reset input fields
     fileListContainer.innerHTML = '';
     filesToUpload = [];
     if (folderNameInput) folderNameInput.value = '';
-    const customNameInput = document.getElementById('customName');
-    if (customNameInput) customNameInput.value = '';
-  })
-  .catch(error => {
-    console.error("Error creating folder:", error);
-    alert("Error creating folder. Check the console for details.");
-  });
+    
+  } catch (error) {
+    console.error("Error during upload process:", error);
+    alert(`Error: ${error.message || 'Unknown error occurred during upload'}`);
+  }
 };
 
 /* ---------------- Copy Link Function with "Copied!" Message ---------------- */

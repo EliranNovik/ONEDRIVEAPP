@@ -14,7 +14,7 @@ body {
 
 /* Main Container for OneDrive App */
 .container {
-  max-width: 700px;
+  max-width: 900px;
   margin: 60px auto;
   padding: 30px 40px;
   border-radius: 10px;
@@ -46,41 +46,37 @@ header {
 header h1 {
   margin: 0;
   font-size: 1.6em;
-  color: #264f23;
+  color: #30335b;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
 }
 
-/* Authentication Buttons Container */
-.auth-buttons {
-  margin-top: 10px;
-  text-align: center;
-}
-
-/* Unified Button Styling (Auth, Upload, Link Actions) */
-.auth-buttons button,
-.input-group button,
-.link-actions button {
+/* Unified Button Styling - Applied to ALL buttons */
+button {
   padding: 12px 24px;
   font-size: 1em;
   font-weight: 600;
   text-transform: uppercase;
   border: none;
   border-radius: 6px;
-  background: linear-gradient(135deg, rgba(57, 82, 50, 0.985), #447541);
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.985), #34415a);
   color: #f0eff2;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
-.auth-buttons button:hover,
-.input-group button:hover,
-.link-actions button:hover {
+button:hover {
   transform: scale(1.03);
-  box-shadow: 0 4px 12px rgb(40, 75, 37);
-  color: #426242;
-  background: #8ec97c;
+  box-shadow: 0 4px 12px rgb(53, 55, 90);
+  color: #2d2e4a;
+  background: #e0e0e0;
+}
+
+/* Authentication Buttons Container */
+.auth-buttons {
+  margin-top: 10px;
+  text-align: center;
 }
 
 /* Upload Section */
@@ -91,54 +87,314 @@ header h1 {
 /* Drop Zone */
 .drop-zone {
   width: 100%;
-  height: 200px;
-  border: 2px dashed #1c3c20;
-  border-radius: 8px;
+  height: 180px;
+  border: 2px dashed #2a304f;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   background: rgba(250, 250, 250, 0.586);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
 }
 
-.drop-zone p {
-  font-size: 1.3em;
-  color: #254431;
+.drop-zone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.05), rgba(126, 165, 204, 0.05));
+  z-index: 1;
+}
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  padding: 20px;
+  text-align: center;
+}
+
+.drop-text {
+  font-size: 1.8em;
+  font-weight: 600;
+  color: #2d2e4a;
+  margin: 0 0 15px 0;
+}
+
+.drop-subtext {
+  font-size: 1.1em;
+  color: #5a5f7a;
   margin: 0;
 }
 
 .drop-zone.hover {
-  background-color: rgba(111, 229, 133, 0.519);
-  border-color: #28472b;
+  background-color: rgba(126, 165, 204, 0.15);
+  border-color: #7ea5cc;
+  transform: scale(1.01);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.drop-zone.files-selected {
+  background-color: rgba(126, 165, 204, 0.15);
+  border-color: #7ea5cc;
+}
+
+.drop-zone.files-selected .drop-text {
+  color: #7ea5cc;
+}
+
+.browse-button {
+  padding: 10px 20px;
+  font-size: 0.9em;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.8), #34415a);
+  color: #f0eff2;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.browse-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #e0e0e0;
 }
 
 /* Input Group */
 .input-group {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 25px;
+  width: 100%;
+  align-items: center; /* Center items horizontally */
+}
+
+.folder-input-container {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .input-group input[type="text"] {
-  flex: 1 1 250px;
-  padding: 10px;
-  border: 1px solid #253a25;
-  border-radius: 4px;
-  background: rgba(250, 250, 250, 0.586);
-  color: #2a4227;
-  font-size: 1.6em;
+  width: 100%;
+  padding: 14px 15px;
+  border: 1px solid #25273a;
+  border-radius: 8px;
+  background: rgba(250, 250, 250, 0.8);
+  color: #2b334a;
+  font-size: 2.9em;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   text-align: center;
+  height: 60px;
+}
+
+/* Change placeholder color in input fields */
+.input-group input::placeholder {
+  color: #2e3050;
+  opacity: 1;
+  text-align: center;
+  font-size: 1.2em;
+}
+
+.input-group button {
+  width: 100%;
+  max-width: 300px; /* Limit the width of the button */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 25px;
+  font-size: 1em;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.985), #34415a);
+  color: #f0eff2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  height: 50px;
+  margin: 0 auto; /* Center the button */
+}
+
+.input-group button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #e0e0e0;
+  color: #2d2e4a;
+}
+
+.input-group button i {
+  font-size: 1.1em;
+}
+
+/* Hamburger Menu Styling */
+.hamburger-menu {
+  font-size: 40px;
+  cursor: pointer;
+  display: block;
+  color: #3a4058;
+  transition: transform 0.3s ease;
+}
+
+.hamburger-menu.active {
+  transform: rotate(90deg);
+}
+
+/* Hamburger Menu Container */
+.menu {
+  display: none; /* Hidden by default */
+  position: absolute;
+  top: 60px; /* Below header */
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  text-align: center;
+  width: 250px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.menu.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Menu List */
+.menu ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.menu ul li {
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #e9e7e7e9;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.menu.active ul li {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: calc(0.1s * var(--i, 0));
+}
+
+.menu ul li:hover {
+  background-color: #2d2e4a;
+  transform: translateX(5px);
+  cursor: pointer;
+}
+
+.menu ul li a {
+  text-decoration: none;
+  color: #33436e;
+  font-size: 1.1em;
+  font-weight: bold;
+  display: block;
+  transition: all 0.15s ease;
+}
+
+.menu ul li:hover a {
+  color: #ffffff;
 }
 
 /* Link Actions (Buttons for Copy Link & Open Folder) */
 .link-actions {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.link-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 0.9em;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.8), #34415a);
+  color: #f0eff2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.link-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #b7b7b7;
+  color: #2d2e4a;
+}
+
+.link-actions button i {
+  font-size: 1.1em;
+}
+
+/* Specific styling for copy link and open folder buttons */
+#copyLinkBtn, #openFolderBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 0.9em;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.8), #34415a);
+  color: #f0eff2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#copyLinkBtn:hover, #openFolderBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #b7b7b7;
+  color: #2d2e4a;
+}
+
+#copyLinkBtn i, #openFolderBtn i {
+  font-size: 1.1em;
+}
+
+#copyMessage {
+  display: none;
+  font-size: 1em;
+  color: #7ea5cc;
+  font-weight: bold;
+  margin-left: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#copyMessage.show {
+  display: inline-block;
+  opacity: 1;
 }
 
 /* File List Container */
@@ -150,7 +406,7 @@ header h1 {
 .file-list-container h3 {
   margin-bottom: 10px;
   font-size: 1.2em;
-  color: #2a5f31fb;
+  color: #2a3c5ffb;
 }
 
 .file-list-container ul {
@@ -159,7 +415,7 @@ header h1 {
 }
 
 .file-list-container li {
-  background: rgba(45, 70, 37, 0.785);
+  background: rgba(45, 54, 84, 0.785);
   margin-bottom: 8px;
   padding: 10px;
   border: 1px solid #444;
@@ -186,94 +442,6 @@ header h1 {
 .logo {
   height: 65px; 
   width: auto;
-}
-
-/* Hamburger Menu Styling */
-.hamburger-menu {
-  font-size: 40px;
-  cursor: pointer;
-  display: block;
-  color: #3a583a;
-}
-
-/* Hamburger Menu Container */
-.menu {
-  display: none; /* Hidden by default */
-  position: absolute;
-  top: 60px; /* Below header */
-  right: 20px;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  padding: 10px;
-  text-align: left;
-  width: 250px;
-}
-
-.menu.active {
-  display: block;
-}
-
-/* Menu List */
-.menu ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-.menu ul li {
-  margin-bottom: 10px;
-  padding: 10px;
-  background-color: #e9e7e7e9;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
-}
-
-.menu ul li:hover {
-  background-color: #3b5a39ee;
-  cursor: pointer;
-}
-
-.menu ul li a {
-  text-decoration: none;
-  color: #427831;
-  font-size: 1.1em;
-  font-weight: bold;
-}
-
-.menu ul li:hover a {
-  color: #ffffff;
-}
-
-/* Responsive Design (Hamburger menu appears on smaller screens) */
-@media screen and (max-width: 768px) {
-  .hamburger-menu {
-      display: block;
-  }
-}
-
-/* Style for the "Link Copied" message */
-#copyMessage {
-  display: none;
-  font-size: 1em;
-  color: #81c67c;
-  font-weight: bold;
-  margin-left: 10px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-#copyMessage.show {
-  display: inline-block;
-  opacity: 1;
-}
-
-/* Change placeholder color in input fields */
-.input-group input::placeholder {
-  color: #3c502e;
-  opacity: 1;
-  text-align: center;
-  font-size: 0.7em;
 }
 
 /* Modal Styles (if needed elsewhere) */
@@ -313,34 +481,1146 @@ header h1 {
   cursor: pointer;
 }
 
-/* ----- New Styles for Meeting Creator Page ----- */
-
-/* This container will hold all meeting features in a white box centered on the page */
+/* Content Container - Used for both Meeting Creator and OneDrive Uploader */
 .content-container {
-  background-color: #ffffffc0;
-  max-width: 500px;
-  margin: 100px auto;
+  background-color: rgba(255, 255, 255, 0.9);
+  max-width: 800px;
+  margin: 30px auto;
   padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  color: #333;  /* Dark text for contrast */
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  color: #333;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.content-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* Specific styling for the meeting creator container */
+.meeting-creator-container {
+  margin: 120px auto 30px;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Meeting creator title */
+.content-container h2 {
+  font-size: 2.2em;
+  margin-bottom: 30px;
+  color: #2d2e4a;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.content-container h2:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #2d2e4a, #7ea5cc);
+  border-radius: 2px;
+}
+
+/* Upload Section within content container */
+.content-container .upload-section {
   text-align: center;
 }
 
-/* Adjust form inputs for meeting creator if needed */
-.content-container input[type="text"],
-.content-container input[type="datetime-local"] {
+/* Drop Zone within content container */
+.content-container .drop-zone {
   width: 100%;
-  padding: 12px 10px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1em;
+  height: 220px;
+  border: 2px dashed #2a304f;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 25px;
+  background: rgba(250, 250, 250, 0.586);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Meeting form button: reusing same button styling */
-.content-container button {
-  margin-top: 10px;
+.drop-zone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.05), rgba(126, 165, 204, 0.05));
+  z-index: 1;
+}
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  padding: 20px;
+}
+
+.drop-icon {
+  font-size: 3.5em;
+  color: #2d2e4a;
+  margin-bottom: 15px;
+  transition: transform 0.3s ease;
+}
+
+.drop-zone:hover .drop-icon {
+  transform: translateY(-5px);
+  color: #7ea5cc;
+}
+
+.drop-text {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: #2d2e4a;
+  margin: 0 0 10px 0;
+}
+
+.drop-subtext {
+  font-size: 1em;
+  color: #5a5f7a;
+  margin: 0 0 15px 0;
+}
+
+.browse-button {
+  padding: 10px 20px;
+  font-size: 0.9em;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.8), #34415a);
+  color: #f0eff2;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.browse-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #7ea5cc;
+}
+
+.drop-zone.hover {
+  background-color: rgba(126, 165, 204, 0.15);
+  border-color: #7ea5cc;
+  transform: scale(1.01);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Input Group */
+.content-container .input-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.folder-input-container {
+  flex: 1 1 250px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group input[type="text"] {
+  flex: 1 1 250px;
+  padding: 14px 15px;
+  border: 1px solid #25273a;
+  border-radius: 8px;
+  background: rgba(250, 250, 250, 0.8);
+  color: #2b334a;
+  font-size: 1.2em;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   text-align: center;
+}
+
+.input-group input[type="text"]:focus {
+  outline: none;
+  border-color: #7ea5cc;
+  box-shadow: 0 0 0 3px rgba(126, 165, 204, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.input-group button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 25px;
+  font-size: 1em;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.985), #34415a);
+  color: #f0eff2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.input-group button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #7ea5cc;
+}
+
+.input-group button i {
+  font-size: 1.1em;
+}
+
+/* Link Actions (Buttons for Copy Link & Open Folder) */
+.content-container .link-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.content-container .link-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 0.9em;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.8), #34415a);
+  color: #f0eff2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.content-container .link-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #7ea5cc;
+}
+
+.content-container .link-actions button i {
+  font-size: 1.1em;
+}
+
+#copyMessage {
+  display: none;
+  font-size: 1em;
+  color: #7ea5cc;
+  font-weight: bold;
+  margin-left: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#copyMessage.show {
+  display: inline-block;
+  opacity: 1;
+}
+
+/* File List Container within content container */
+.content-container .file-list-container {
+  text-align: left;
+  margin-top: 20px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  padding: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.content-container .file-list-container h3 {
+  margin-bottom: 15px;
+  font-size: 1.2em;
+  color: #2d2e4a;
+  border-bottom: 1px solid rgba(45, 46, 74, 0.2);
+  padding-bottom: 10px;
+}
+
+.content-container .file-list-container ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.content-container .file-list-container li {
+  background: rgba(45, 54, 84, 0.3);
+  margin-bottom: 8px;
+  padding: 12px 15px;
+  border: 1px solid rgba(45, 46, 74, 0.2);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95em;
+  color: #2d2e4a;
+  transition: all 0.3s ease;
+}
+
+.content-container .file-list-container li:hover {
+  background: rgba(45, 54, 84, 0.4);
+  transform: translateX(5px);
+}
+
+.content-container .file-list-container li .file-name {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.content-container .file-list-container li .file-name i {
+  color: #7ea5cc;
+}
+
+.content-container .file-list-container li .file-size {
+  color: #5a5f7a;
+  font-size: 0.9em;
+}
+
+/* Responsive adjustments for content container */
+@media screen and (max-width: 768px) {
+  .content-container {
+    max-width: 95%;
+    padding: 25px;
+    margin: 20px auto;
+  }
+  
+  .content-container h2 {
+    font-size: 1.8em;
+  }
+  
+  .input-group {
+    flex-direction: column;
+  }
+  
+  .folder-input-container {
+    margin-bottom: 15px;
+  }
+  
+  .link-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .link-actions button {
+    width: 100%;
+  }
+}
+
+/* Logo Styling */
+.logo {
+  height: 65px; 
+  width: auto;
+}
+
+/* Responsive Design - Mobile First Approach */
+@media screen and (max-width: 768px) {
+  /* Header adjustments */
+  .header2 {
+    height: auto;
+    padding: 10px;
+    flex-direction: column;
+    position: relative;
+  }
+  
+  .header2 h1 {
+    font-size: 1.4em;
+    margin: 10px 0;
+    position: static;
+    transform: none;
+  }
+  
+  .logo {
+    height: 50px;
+    margin: 5px 0;
+  }
+  
+  /* Menu adjustments */
+  .menu {
+    width: 100%;
+    position: static;
+    margin-top: 10px;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  
+  /* Content container adjustments */
+  .content-container {
+    max-width: 95%;
+    margin: 20px auto;
+    padding: 20px;
+  }
+  
+  .meeting-creator-container {
+    margin: 80px auto 20px;
+  }
+  
+  /* Input group adjustments */
+  .input-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .folder-input-container {
+    width: 100%;
+  }
+  
+  .input-group input[type="text"] {
+    width: 100%;
+    font-size: 1.5em;
+    height: 60px;
+  }
+  
+  .input-group button {
+    width: 100%;
+    height: 60px;
+    font-size: 1.2em;
+  }
+  
+  /* Link actions adjustments */
+  .link-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .link-actions button {
+    width: 100%;
+  }
+  
+  /* Drop zone adjustments */
+  .drop-zone {
+    height: 180px;
+  }
+  
+  .drop-icon {
+    font-size: 3em;
+  }
+  
+  .drop-text {
+    font-size: 1.3em;
+  }
+  
+  .drop-subtext {
+    font-size: 0.9em;
+  }
+  
+  /* File list adjustments */
+  .file-list-container li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  /* Meeting form adjustments */
+  .meeting-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .meeting-form div {
+    width: 100%;
+  }
+  
+  .meeting-form input[type="text"],
+  .meeting-form label {
+    width: 100%;
+    font-size: 1.2em;
+  }
+  
+  /* Date time picker adjustments */
+  .datetime-picker-trigger {
+    height: 60px;
+    font-size: 1.2em;
+  }
+  
+  .datetime-picker-dropdown {
+    width: 100%;
+    left: 0;
+  }
+  
+  .datetime-picker-calendar {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  
+  .datetime-picker-calendar .day {
+    padding: 5px;
+    font-size: 0.9em;
+  }
+  
+  .datetime-picker-time {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .time-selector {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Button row adjustments */
+  .button-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .button-row button,
+  .button-row a {
+    flex: 1;
+    min-width: 120px;
+    max-width: none;
+  }
+}
+
+/* Small mobile devices */
+@media screen and (max-width: 480px) {
+  .header2 h1 {
+    font-size: 1.2em;
+  }
+  
+  .content-container h2 {
+    font-size: 1.8em;
+  }
+  
+  .input-group input[type="text"] {
+    font-size: 1.3em;
+  }
+  
+  .drop-zone {
+    height: 150px;
+  }
+  
+  .drop-icon {
+    font-size: 2.5em;
+  }
+  
+  .drop-text {
+    font-size: 1.1em;
+  }
+  
+  .datetime-picker-calendar .day {
+    padding: 3px;
+    font-size: 0.8em;
+  }
+}
+
+/* Fix for iOS Safari 100vh issue */
+@supports (-webkit-touch-callout: none) {
+  .meeting-creator-container {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Meeting form styling */
+.meeting-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+/* Adjust form inputs for meeting creator */
+.content-container input[type="text"],
+.content-container input[type="datetime-local"],
+.content-container select,
+.content-container textarea {
+  width: 100%;
+  padding: 14px 15px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1em;
+  background-color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.content-container input[type="text"]:focus,
+.content-container input[type="datetime-local"]:focus,
+.content-container select:focus,
+.content-container textarea:focus {
+  outline: none;
+  border-color: #7ea5cc;
+  box-shadow: 0 0 0 3px rgba(126, 165, 204, 0.2);
+  background-color: #fff;
+}
+
+/* Modern Date and Time Picker Styling */
+.datetime-picker-container {
+  position: relative;
+  margin: 10px 0;
+}
+
+.datetime-picker-trigger {
+  width: 100%;
+  padding: 14px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1em;
+  background-color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.datetime-picker-trigger:hover {
+  border-color: #7ea5cc;
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.datetime-picker-trigger i {
+  color: #2d2e4a;
+  font-size: 1.2em;
+}
+
+.datetime-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+  display: none;
+  margin-top: 5px;
+}
+
+.datetime-picker-dropdown.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.datetime-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #eee;
+}
+
+.datetime-picker-header button {
+  background: none;
+  border: none;
+  color: #2d2e4a;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 5px;
+  width: auto;
+  max-width: none;
+  margin: 0;
+}
+
+.datetime-picker-header button:hover {
+  color: #7ea5cc;
+  background: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.datetime-picker-body {
+  padding: 15px;
+}
+
+.datetime-picker-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.datetime-picker-calendar .weekday {
+  text-align: center;
+  font-weight: 600;
+  color: #2d2e4a;
+  padding: 5px;
+  font-size: 0.8em;
+}
+
+.datetime-picker-calendar .day {
+  text-align: center;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.datetime-picker-calendar .day:hover {
+  background-color: rgba(126, 165, 204, 0.1);
+}
+
+.datetime-picker-calendar .day.selected {
+  background-color: #7ea5cc;
+  color: white;
+}
+
+.datetime-picker-calendar .day.today {
+  border: 1px solid #7ea5cc;
+}
+
+.datetime-picker-calendar .day.disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.datetime-picker-time {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.time-selector {
+  display: flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 5px;
+}
+
+.time-selector button {
+  background: none;
+  border: none;
+  color: #2d2e4a;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 5px;
+  width: auto;
+  max-width: none;
+  margin: 0;
+}
+
+.time-selector button:hover {
+  color: #7ea5cc;
+  background: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.time-selector input {
+  width: 50px;
+  text-align: center;
+  border: none;
+  background: none;
+  font-size: 1em;
+  padding: 5px;
+  margin: 0 5px;
+}
+
+.time-selector select {
+  border: none;
+  background: none;
+  font-size: 1em;
+  padding: 5px;
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.datetime-picker-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  border-top: 1px solid #eee;
+}
+
+.datetime-picker-footer button {
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: auto;
+  max-width: none;
+  margin: 0;
+}
+
+.datetime-picker-footer .cancel-btn {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.datetime-picker-footer .apply-btn {
+  background-color: #7ea5cc;
+  color: white;
+}
+
+.datetime-picker-footer .cancel-btn:hover {
+  background-color: #e0e0e0;
+  transform: none;
+  box-shadow: none;
+}
+
+.datetime-picker-footer .apply-btn:hover {
+  background-color: #6a8fb3;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Quick date selection */
+.quick-date-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.quick-date-option {
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-radius: 20px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-date-option:hover {
+  background-color: rgba(126, 165, 204, 0.1);
+}
+
+.quick-date-option.selected {
+  background-color: #7ea5cc;
+  color: white;
+}
+
+/* Time zone selector */
+.timezone-selector {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.timezone-selector select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+}
+
+/* Meeting form button styling */
+.content-container button {
+  margin-top: 20px;
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* New features for meeting creator */
+
+/* Meeting type selector */
+.meeting-type-selector {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.meeting-type-option {
+  flex: 1;
+  max-width: 200px;
+  padding: 15px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.meeting-type-option:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-3px);
+}
+
+.meeting-type-option.selected {
+  border-color: #7ea5cc;
+  background-color: rgba(126, 165, 204, 0.1);
+}
+
+.meeting-type-option i {
+  font-size: 2em;
+  margin-bottom: 10px;
+  color: #2d2e4a;
+}
+
+/* Participant management */
+.participant-section {
+  margin: 30px 0;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+}
+
+.participant-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.participant-tag {
+  display: flex;
+  align-items: center;
+  background-color: rgba(45, 46, 74, 0.1);
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 0.9em;
+}
+
+.participant-tag .remove-participant {
+  margin-left: 8px;
+  cursor: pointer;
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+/* Meeting settings */
+.meeting-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+}
+
+.setting-item label {
+  font-weight: 600;
+  color: #2d2e4a;
+}
+
+/* Toggle switch for settings */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #7ea5cc;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+/* Meeting preview */
+.meeting-preview {
+  margin: 30px 0;
+  padding: 20px;
+  background-color: rgba(45, 46, 74, 0.05);
+  border-radius: 10px;
+  text-align: left;
+}
+
+.meeting-preview h3 {
+  margin-bottom: 15px;
+  color: #2d2e4a;
+}
+
+.preview-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 20px;
+}
+
+.preview-details .label {
+  font-weight: 600;
+  color: #2d2e4a;
+}
+
+/* Responsive adjustments for meeting creator */
+@media screen and (max-width: 768px) {
+  .content-container {
+    max-width: 95%;
+    padding: 25px;
+  }
+  
+  .meeting-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .meeting-settings {
+    grid-template-columns: 1fr;
+  }
+  
+  .meeting-type-selector {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .meeting-type-option {
+    width: 100%;
+  }
+}
+
+/* Browse button disabled state */
+.browse-button:disabled {
+  background: #a0a0a0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Upload Button */
+#upload-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 25px;
+  font-size: 1em;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.985), #34415a);
+  color: #f0eff2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  height: 50px;
+}
+
+#upload-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #b7b7b7;
+  color: #2d2e4a;
+}
+
+#upload-button i {
+  font-size: 1.1em;
+}
+
+/* Button row styling */
+.button-row {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.button-row button,
+.button-row a {
+  flex: 1;
+  max-width: 200px;
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Ensure the join meeting link button is styled consistently */
+.button-row a button {
+  width: 100%;
+  margin: 0;
+}
+
+#emailButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 0.9em;
+  background: linear-gradient(135deg, rgba(45, 46, 74, 0.8), #34415a);
+  color: #f0eff2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#emailButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #b7b7b7;
+  color: #2d2e4a;
+}
+
+#emailButton i {
+  font-size: 1.1em;
+}
+
+/* Responsive adjustments for button row */
+@media screen and (max-width: 768px) {
+  .button-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .button-row button,
+  .button-row a {
+    flex: 1;
+    min-width: 120px;
+    max-width: none;
+  }
 }
 
