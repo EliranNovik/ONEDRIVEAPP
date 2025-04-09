@@ -11,25 +11,26 @@
 </head>
 <body>
 
-  <script> window.REDIRECT_URI = "https://onedriveapp.onrender.com"; </script>
+  <script> window.REDIRECT_URI = "http://localhost:3000/onedriveapp"; </script>
 
   <header class="header2">
-    <h1>OneDrive Uploader</h1>
-    <img src="DPLOGO.png" alt="Logo" class="logo">
-    
-    <!-- Hamburger Menu -->
-    <div class="hamburger-menu" onclick="toggleMenu()">&#9776;</div>
-    
-    <!-- Hamburger Menu Links -->
-    <nav id="menu" class="menu">
-      <ul>
-        <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
-        <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
-        <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
-        <!-- Simply navigate to /teams for meeting creation -->
-        <li><a href="/teams" id="create-meeting-link">Create a Meeting</a></li>
-      </ul>
-    </nav>
+    <div class="header-content">
+      <img src="DPLOGO.png" alt="Logo" class="logo">
+      
+      <!-- Navigation Menu -->
+      <nav class="main-nav">
+        <ul>
+          <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
+          <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
+          <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
+          <li><a href="/teams" id="create-meeting-link">Create a Meeting</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="welcome-message" id="welcomeMessage">
+      <span id="welcomeText">Please sign in</span>
+      <span id="userName" style="display: none;"></span>
+    </div>
   </header>
 
   <div class="container">
@@ -73,30 +74,31 @@
   <!-- Removed meeting modal markup and meeting-related scripts -->
   <script src="app.js"></script>
   <script>
-    // Toggle hamburger menu visibility
-    function toggleMenu() {
-      var menu = document.getElementById("menu");
-      var hamburger = document.querySelector('.hamburger-menu');
-      menu.classList.toggle("active");
-      hamburger.classList.toggle("active");
+    // Only run menu-related code if the menu exists
+    const menu = document.getElementById("menu");
+    const hamburger = document.querySelector('.hamburger-menu');
+    
+    if (menu && hamburger) {
+      // Toggle hamburger menu visibility
+      function toggleMenu() {
+        menu.classList.toggle("active");
+        hamburger.classList.toggle("active");
+        
+        // Add animation delay to menu items
+        const menuItems = menu.querySelectorAll('li');
+        menuItems.forEach((item, index) => {
+          item.style.setProperty('--i', index);
+        });
+      }
       
-      // Add animation delay to menu items
-      const menuItems = menu.querySelectorAll('li');
-      menuItems.forEach((item, index) => {
-        item.style.setProperty('--i', index);
+      // Close menu when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!menu.contains(event.target) && !hamburger.contains(event.target) && menu.classList.contains('active')) {
+          menu.classList.remove('active');
+          hamburger.classList.remove('active');
+        }
       });
     }
-    
-    // Close menu when clicking outside
-    document.addEventListener('click', function(event) {
-      const menu = document.getElementById('menu');
-      const hamburger = document.querySelector('.hamburger-menu');
-      
-      if (!menu.contains(event.target) && !hamburger.contains(event.target) && menu.classList.contains('active')) {
-        menu.classList.remove('active');
-        hamburger.classList.remove('active');
-      }
-    });
   </script>
 </body>
 </html>

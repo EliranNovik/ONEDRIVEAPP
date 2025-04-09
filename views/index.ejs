@@ -8,16 +8,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <!-- Header with Hamburger Menu -->
+  <!-- Header with Navigation -->
   <header class="header2">
-    <h1>Teams Meeting Creator</h1>
+    <div class="header-content">
     <img src="/DPLOGO.png" alt="Logo" class="logo">
     
-    <!-- Hamburger Menu Icon -->
-    <div class="hamburger-menu" onclick="toggleMenu()">&#9776;</div>
-    
-    <!-- Hamburger Menu Links -->
-    <nav id="menu" class="menu">
+      <!-- Navigation Menu -->
+      <nav class="main-nav">
       <ul>
         <li><a href="/" target="_self">Home</a></li>
         <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
@@ -25,6 +22,7 @@
         <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
       </ul>
     </nav>
+    </div>
   </header>
 
   <!-- Main Content Container -->
@@ -151,7 +149,21 @@
   </div>
   
   <!-- Inline Script for Hamburger Menu and Modal -->
+  <script src="https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js"></script>
   <script>
+    // MSAL configuration
+    const msalConfig = {
+      auth: {
+        clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",
+        authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
+        redirectUri: window.location.origin + "/teams/auth/callback"
+      }
+    };
+
+    const msalInstance = new msal.PublicClientApplication(msalConfig);
+    const graphScopes = ["User.Read", "OnlineMeetings.ReadWrite", "Calendars.ReadWrite"];
+    let currentAccount = null;
+
     // Toggle hamburger menu visibility
     function toggleMenu() {
       var menu = document.getElementById("menu");
@@ -171,7 +183,7 @@
       const menu = document.getElementById('menu');
       const hamburger = document.querySelector('.hamburger-menu');
       
-      if (!menu.contains(event.target) && !hamburger.contains(event.target) && menu.classList.contains('active')) {
+      if (menu && hamburger && !menu.contains(event.target) && !hamburger.contains(event.target) && menu.classList.contains('active')) {
         menu.classList.remove('active');
         hamburger.classList.remove('active');
       }
@@ -198,14 +210,14 @@
       const dateTimeInput = document.getElementById("dateTime");
       const quickDateOptions = document.querySelectorAll(".quick-date-option");
       
-      // Current date
+      // Initialize variables
       let currentDate = new Date();
       let selectedDate = new Date();
       let selectedHour = 12;
       let selectedMinute = 0;
       
-      // Initialize the calendar
-      function initCalendar() {
+      // Initialize calendar
+      function initializeCalendar() {
         // Clear existing days
         const existingDays = calendar.querySelectorAll(".day");
         existingDays.forEach(day => day.remove());
@@ -276,7 +288,7 @@
       }
       
       // Initialize the calendar on page load
-      initCalendar();
+      initializeCalendar();
       
       // Toggle dropdown
       datetimeTrigger.addEventListener("click", function(e) {
@@ -295,14 +307,14 @@
       prevMonthBtn.addEventListener("click", function(e) {
         e.stopPropagation();
         currentDate.setMonth(currentDate.getMonth() - 1);
-        initCalendar();
+        initializeCalendar();
       });
       
       // Next month button
       nextMonthBtn.addEventListener("click", function(e) {
         e.stopPropagation();
         currentDate.setMonth(currentDate.getMonth() + 1);
-        initCalendar();
+        initializeCalendar();
       });
       
       // Hour and minute controls
@@ -356,7 +368,7 @@
           selectedDate = new Date(date);
           
           // Update calendar
-          initCalendar();
+          initializeCalendar();
           
           // Remove selected class from all quick date options
           quickDateOptions.forEach(opt => opt.classList.remove("selected"));
@@ -393,31 +405,31 @@
         
         // Close the dropdown
         datetimeDropdown.classList.remove("active");
-    });
-    
-    // Handle meeting form submission
-    document.getElementById("meetingForm")?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const topic = document.getElementById("topic").value;
-      const dateTime = document.getElementById("dateTime").value;
+      });
+
+      // Handle meeting form submission
+      document.getElementById("meetingForm")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const topic = document.getElementById("topic").value;
+        const dateTime = document.getElementById("dateTime").value;
         
         if (!dateTime) {
           alert("Please select a date and time for the meeting");
           return;
         }
-      
-      try {
-        const response = await fetch("/teams/create-meeting", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic, dateTime })
-        });
-        const data = await response.json();
-        if (data.success) {
-          const joinLink = document.getElementById("joinLink");
-          joinLink.href = data.meetingLink;
-          document.getElementById("meetingLinkContainer").style.display = "block";
-          document.getElementById("copyButton").onclick = function() {
+        
+        try {
+          const response = await fetch("/teams/create-meeting", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ topic, dateTime })
+          });
+          const data = await response.json();
+          if (data.success) {
+            const joinLink = document.getElementById("joinLink");
+            joinLink.href = data.meetingLink;
+            document.getElementById("meetingLinkContainer").style.display = "block";
+            document.getElementById("copyButton").onclick = function() {
               // Create a temporary element with the formatted link
               const tempElement = document.createElement('div');
               tempElement.innerHTML = `<a href="${data.meetingLink}">Click here to join meeting</a>`;
@@ -444,100 +456,101 @@
             document.getElementById("emailButton").onclick = function() {
               // Show template selection modal
               document.getElementById("templateModal").style.display = "block";
-          };
-        } else {
+            };
+          } else {
+            alert("Error creating meeting");
+          }
+        } catch (err) {
+          console.error("Error:", err);
           alert("Error creating meeting");
         }
-      } catch (err) {
-        console.error("Error:", err);
-        alert("Error creating meeting");
-      }
-    });
-    });
+      });
 
-    // Email Modal Functionality
-    const templateModal = document.getElementById("templateModal");
-    const emailModal = document.getElementById("emailModal");
-    const emailButton = document.getElementById("emailButton");
-    const closeButtons = document.querySelectorAll(".close");
-    const emailForm = document.getElementById("emailForm");
-    const templateOptions = document.querySelectorAll(".template-option");
+      // Email Modal Functionality
+      const templateModal = document.getElementById("templateModal");
+      const emailModal = document.getElementById("emailModal");
+      const emailButton = document.getElementById("emailButton");
+      const closeButtons = document.querySelectorAll(".close");
+      const emailForm = document.getElementById("emailForm");
+      const templateOptions = document.querySelectorAll(".template-option");
 
-    // Show template selection modal when clicking email button
-    emailButton.onclick = function() {
-      templateModal.style.display = "block";
-    };
-
-    // Handle template selection
-    templateOptions.forEach(option => {
-      option.querySelector(".select-template").onclick = function() {
-        const template = option.getAttribute("data-template");
-        document.getElementById("selectedTemplate").value = template;
-        templateModal.style.display = "none";
-        emailModal.style.display = "block";
+      // Show template selection modal when clicking email button
+      emailButton.onclick = function() {
+        templateModal.style.display = "block";
       };
-    });
 
-    // Close modals when clicking close buttons
-    closeButtons.forEach(button => {
-      button.onclick = function() {
-        templateModal.style.display = "none";
-        emailModal.style.display = "none";
-      };
-    });
+      // Handle template selection
+      templateOptions.forEach(option => {
+        option.querySelector(".select-template").onclick = function() {
+          const template = option.getAttribute("data-template");
+          document.getElementById("selectedTemplate").value = template;
+          templateModal.style.display = "none";
+          emailModal.style.display = "block";
+        };
+      });
 
-    // Close modals when clicking outside
-    window.onclick = function(event) {
-      if (event.target == templateModal) {
-        templateModal.style.display = "none";
-      }
-      if (event.target == emailModal) {
-        emailModal.style.display = "none";
-      }
-    };
-
-    // Handle email form submission
-    emailForm.onsubmit = async function(e) {
-      e.preventDefault();
-      
-      const recipientEmail = document.getElementById("recipientEmail").value;
-      const recipientName = document.getElementById("recipientName").value;
-      const template = document.getElementById("selectedTemplate").value;
-      const meetingLink = document.getElementById("joinLink").href;
-      const topic = document.getElementById("topic").value;
-      const dateTime = document.getElementById("dateTime").value;
-      
-      const meetingDate = new Date(dateTime).toLocaleDateString();
-      const meetingTime = new Date(dateTime).toLocaleTimeString();
-
-      try {
-        const response = await fetch("/teams/send-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            recipientEmail,
-            recipientName,
-            meetingTopic: topic,
-            meetingDate,
-            meetingTime,
-            meetingLink,
-            language: template
-          })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-          alert("Email sent successfully!");
+      // Close modals when clicking close buttons
+      closeButtons.forEach(button => {
+        button.onclick = function() {
+          templateModal.style.display = "none";
           emailModal.style.display = "none";
-          emailForm.reset();
-        } else {
-          alert("Error sending email: " + (data.error || "Unknown error"));
+        };
+      });
+
+      // Close modals when clicking outside
+      window.onclick = function(event) {
+        if (event.target == templateModal) {
+          templateModal.style.display = "none";
         }
-      } catch (err) {
-        console.error("Error:", err);
-        alert("Error sending email");
-      }
-    };
+        if (event.target == emailModal) {
+          emailModal.style.display = "none";
+        }
+      };
+
+      // Handle email form submission
+      emailForm.onsubmit = async function(e) {
+        e.preventDefault();
+        
+        const recipientEmail = document.getElementById("recipientEmail").value;
+        const recipientName = document.getElementById("recipientName").value;
+        const template = document.getElementById("selectedTemplate").value;
+        const meetingLink = document.getElementById("joinLink").href;
+        const topic = document.getElementById("topic").value;
+        const dateTime = document.getElementById("dateTime").value;
+        
+        const meetingDate = new Date(dateTime).toLocaleDateString();
+        const meetingTime = new Date(dateTime).toLocaleTimeString();
+
+        try {
+          const response = await fetch("/teams/send-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              recipientEmail,
+              recipientName,
+              meetingTopic: topic,
+              meetingDate,
+              meetingTime,
+              meetingLink,
+              language: template
+            })
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            alert("Email sent successfully!");
+            emailModal.style.display = "none";
+            emailForm.reset();
+          } else {
+            alert("Error sending email: " + (data.error || "Unknown error"));
+          }
+        } catch (err) {
+          console.error("Error:", err);
+          alert("Error sending email");
+        }
+      };
+    });
   </script>
 </body>
 </html>
+

@@ -10,7 +10,7 @@ const msalConfig = {
     clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",  
     authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
     // Use the environment variable for redirectUri (set via window.REDIRECT_URI in your HTML)
-    redirectUri: window.REDIRECT_URI || 'https://onedriveapp.onrender.com'
+    redirectUri: window.REDIRECT_URI || 'http://localhost:3000/onedriveapp'
   }
 };
 
@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (accounts.length > 0) {
           currentAccount = accounts[0];
           msalInstance.setActiveAccount(currentAccount);
+          updateWelcomeMessage(currentAccount.name);
           console.log("Account retrieved from MSAL:", currentAccount);
         } else {
           // If no accounts found but we have a token, try to handle the redirect
@@ -59,13 +60,36 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
+// Function to extract username from email
+function extractUsername(email) {
+  if (!email) return '';
+  return email.split('@')[0];
+}
+
+// Function to update welcome message
+function updateWelcomeMessage(userName) {
+  const welcomeMessage = document.querySelector('.welcome-message');
+  if (userName) {
+    welcomeMessage.classList.add('signed-in');
+    document.getElementById('userName').textContent = userName;
+    document.getElementById('welcomeText').style.display = 'none';
+    document.getElementById('userName').style.display = 'inline-block';
+  } else {
+    welcomeMessage.classList.remove('signed-in');
+    document.getElementById('welcomeText').style.display = 'inline-block';
+    document.getElementById('userName').style.display = 'none';
+  }
+}
+
 // Handle redirect promise to complete authentication
 async function handleRedirectPromise() {
   try {
     const response = await msalInstance.handleRedirectPromise();
-    if (response !== null) {
-      // User just signed in
-      currentAccount = response.account;
+    if (response) {
+      console.log('Login successful');
+      const account = msalInstance.getAccount();
+      updateWelcomeMessage(account.name);
+      currentAccount = account;
       msalInstance.setActiveAccount(currentAccount);
       console.log("User signed in via redirect:", currentAccount);
       
@@ -97,7 +121,7 @@ async function handleRedirectPromise() {
       }
     }
   } catch (error) {
-    console.error("Error handling redirect:", error);
+    console.error('Error during redirect:', error);
   }
 }
 
