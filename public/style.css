@@ -1624,3 +1624,125 @@ input:checked + .toggle-slider:before {
   }
 }
 
+/* Email Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 500px;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  right: 20px;
+  top: 10px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#emailForm button {
+  width: 100%;
+  padding: 10px;
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+#emailForm button:hover {
+  background-color: #005a9e;
+}
+
+/* Template Selection Modal Styles */
+.template-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.template-option {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  transition: all 0.3s ease;
+}
+
+.template-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #7ea5cc;
+}
+
+.template-option h3 {
+  margin: 0 0 10px 0;
+  color: #2d2e4a;
+}
+
+.template-option p {
+  margin: 0 0 15px 0;
+  color: #5a5f7a;
+}
+
+.template-option .select-template {
+  background-color: #7ea5cc;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.template-option .select-template:hover {
+  background-color: #6a8fb3;
+}
+
+/* Responsive adjustments for template selection */
+@media screen and (max-width: 768px) {
+  .template-options {
+    gap: 15px;
+  }
+  
+  .template-option {
+    padding: 15px;
+  }
+}
+

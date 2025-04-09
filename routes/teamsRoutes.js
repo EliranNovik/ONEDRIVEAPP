@@ -3,6 +3,8 @@ const express = require("express");
 const axios = require("axios");
 const msal = require("@azure/msal-node");
 require("dotenv").config();
+const path = require("path");
+const fs = require("fs");
 
 const router = express.Router();
 
@@ -103,6 +105,61 @@ router.post("/create-meeting", checkAuth, async (req, res) => {
   } catch (error) {
     console.error("Error creating meeting:", error.response?.data || error.message);
     res.status(500).json({ error: "Failed to create meeting" });
+  }
+});
+
+// Email Route
+router.post("/send-email", checkAuth, async (req, res) => {
+  const { recipientEmail, recipientName, meetingTopic, meetingDate, meetingTime, meetingLink, language } = req.body;
+  
+  if (!recipientEmail || !meetingLink) {
+    return res.status(400).json({ error: "Recipient email and meeting link are required." });
+  }
+
+  try {
+    // Read the appropriate email template
+    const templatePath = path.join(__dirname, '../public/email-templates', `${language || 'english'}.html`);
+    let emailTemplate = fs.readFileSync(templatePath, 'utf8');
+
+    // Replace placeholders with actual values
+    emailTemplate = emailTemplate
+      .replace('[Recipient Name]', recipientName || 'Guest')
+      .replace('[Meeting Topic]', meetingTopic || 'Meeting')
+      .replace('[Meeting Date]', meetingDate || '')
+      .replace('[Meeting Time]', meetingTime || '')
+      .replace('[Meeting Link]', meetingLink);
+
+    // Send email using Microsoft Graph API
+    const response = await axios.post(
+      'https://graph.microsoft.com/v1.0/me/sendMail',
+      {
+        message: {
+          subject: `Meeting Invitation: ${meetingTopic}`,
+          body: {
+            contentType: 'HTML',
+            content: emailTemplate
+          },
+          toRecipients: [
+            {
+              emailAddress: {
+                address: recipientEmail
+              }
+            }
+          ]
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${req.session.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.json({ success: true, message: 'Email sent successfully' });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).json({ error: 'Failed to send email' });
   }
 });
 

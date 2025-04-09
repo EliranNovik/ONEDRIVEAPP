@@ -21,7 +21,8 @@ const graphScopes = [
   "Files.ReadWrite.All",
   "OnlineMeetings.ReadWrite",
   "Calendars.ReadWrite",
-  "User.Read"
+  "User.Read",
+  "Mail.Send"
 ];
 
 /* ---------------- Utility: Detect Mobile Device ---------------- */
