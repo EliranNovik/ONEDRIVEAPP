@@ -130,19 +130,6 @@
   <!-- Removed meeting modal markup and meeting-related scripts -->
   <script src="app.js"></script>
   <script>
-    // Configure SweetAlert2 Toast
-    const Toast = Swal.mixin({
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true,
-      didOpen: (toast) => {
-        toast.addEventListener('mouseenter', Swal.stopTimer);
-        toast.addEventListener('mouseleave', Swal.resumeTimer);
-      }
-    });
-
     // Check sign-in state and update welcome message on page load
     document.addEventListener('DOMContentLoaded', function() {
       // Check MSAL accounts first
