@@ -85,47 +85,44 @@
         </ul>
       </nav>
     </div>
-    <div class="welcome-message" id="welcomeMessage">
-      <span id="welcomeText">Please sign in</span>
-      <span id="userName" style="display: none;"></span>
-    </div>
-  </header>
-
-  <div class="container">
-    <header>
+    <div class="header-right">
+      <div class="welcome-message" id="welcomeMessage">
+        <span id="welcomeText">Please sign in</span>
+        <span id="userName" style="display: none;"></span>
+      </div>
       <div class="auth-buttons">
         <button id="signin-button">Sign In</button>
         <button id="signout-button" style="display:none;">My OneDrive</button>
       </div>
-    </header>
-
-    <div class="content-container">
-      <h2>Decker Pex Levi Law Office</h2>
-      
-      <section class="upload-section">
-        <div id="drop-zone" class="drop-zone">
-          <div class="drop-zone-content">
-            <p class="drop-text">Drag and drop files here</p>
-            <p class="drop-subtext">Click anywhere in this area to select files</p>
-          </div>
-        </div>
-        <!-- Hidden file input triggered by clicking on the drop zone -->
-        <input type="file" id="fileInput" multiple style="display: none;">
-        
-        <div class="input-group">
-          <div class="folder-input-container">
-            <input type="text" id="folderName" placeholder="Enter folder name...">
-          </div>
-          <button id="upload-button"><i class="fas fa-upload"></i> Upload Files</button>
-        </div>
-        <div class="link-actions">
-          <button id="copyLinkBtn" style="display:none;"><i class="fas fa-copy"></i> Copy Link</button>
-          <span id="copyMessage" style="display:none;">Link Copied!</span>
-          <button id="openFolderBtn" style="display:none;"><i class="fas fa-folder-open"></i> Open Folder</button>
-        </div>
-        <div id="fileList" class="file-list-container"></div>
-      </section>
     </div>
+  </header>
+
+  <div class="content-container">
+    <h2>Decker Pex Levi Law Office</h2>
+    
+    <section class="upload-section">
+      <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-content">
+          <p class="drop-text">Drag and drop files here</p>
+          <p class="drop-subtext">Click anywhere in this area to select files</p>
+        </div>
+      </div>
+      <!-- Hidden file input triggered by clicking on the drop zone -->
+      <input type="file" id="fileInput" multiple style="display: none;">
+      
+      <div class="input-group">
+        <div class="folder-input-container">
+          <input type="text" id="folderName" placeholder="Enter folder name...">
+        </div>
+        <button id="upload-button"><i class="fas fa-upload"></i> Upload Files</button>
+      </div>
+      <div class="link-actions">
+        <button id="copyLinkBtn" style="display:none;"><i class="fas fa-copy"></i> Copy Link</button>
+        <span id="copyMessage" style="display:none;">Link Copied!</span>
+        <button id="openFolderBtn" style="display:none;"><i class="fas fa-folder-open"></i> Open Folder</button>
+      </div>
+      <div id="fileList" class="file-list-container"></div>
+    </section>
   </div>
 
   <!-- Removed meeting modal markup and meeting-related scripts -->
