@@ -26,123 +26,155 @@ body {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
 }
 
-/* Header Styling */
+/* Header and Navigation Styles */
 .header2 {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 15px 30px;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 1.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 20px 20px;
-  min-height: auto;
-  transition: all 0.3s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.083);
-  backdrop-filter: blur(8px);
-  flex-wrap: wrap;
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 30px;
   flex: 1;
   justify-content: center;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 10px;
-  margin-right: 10px;
-  min-width: auto;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 10px;
-  margin-left: 10px;
-  min-width: auto;
 }
 
 .logo {
-  height: 50px;
-  width: auto;
-  margin-right: 40px;
-  display: block;
-  margin: 0 auto;
+  height: 45px;
+  transition: transform 0.3s ease;
 }
 
-/* Main Navigation */
-.main-nav {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 10px;
+.logo:hover {
+  transform: scale(1.05);
 }
 
 .main-nav ul {
   display: flex;
+  gap: 25px;
   list-style: none;
   margin: 0;
   padding: 0;
-  justify-content: center;
-  gap: 15px;
-  position: relative;
-  flex-wrap: wrap;
 }
 
 .main-nav a {
-  color: #2d2e4a;
+  color: #243045;
   text-decoration: none;
-  font-size: 1.3em;
+  font-size: 16px;
   font-weight: 500;
   padding: 8px 15px;
-  position: relative;
+  border-radius: 8px;
   transition: all 0.3s ease;
-  border-radius: 6px;
-  letter-spacing: 0.5px;
-  backdrop-filter: blur(5px);
-  white-space: nowrap;
+  position: relative;
 }
 
-/* Modern hover animation */
 .main-nav a::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 50%;
   width: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #d19a41, #f5f5f5);
+  height: 2px;
+  background: #cb8f27;
   transition: all 0.3s ease;
   transform: translateX(-50%);
 }
 
 .main-nav a:hover {
-  color: #ffffff;
-  background: #283249;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.483);
 }
 
 .main-nav a:hover::after {
-  width: 80%;
+  width: 100%;
 }
 
-/* Responsive adjustments */
+/* Welcome Message and Auth Buttons */
+.welcome-message {
+  color: #27314b;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 15px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.348);
+  transition: all 0.3s ease;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.auth-buttons button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #253847, #34415a);
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.auth-buttons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #34415a, #253847);
+}
+
+.auth-buttons button i {
+  font-size: 16px;
+}
+
+/* Mobile Responsive Styles */
 @media screen and (max-width: 1024px) {
   .header2 {
+    padding: 12px 20px;
+  }
+
+  .main-nav ul {
+    gap: 15px;
+  }
+
+  .main-nav a {
+    font-size: 15px;
+    padding: 6px 12px;
+  }
+
+  .auth-buttons button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .header2 {
     padding: 10px 15px;
+  }
+
+  .header-content {
+    gap: 15px;
+  }
+
+  .logo {
+    height: 35px;
   }
 
   .main-nav ul {
@@ -150,62 +182,59 @@ body {
   }
 
   .main-nav a {
-    font-size: 0.9em;
-    padding: 6px 12px;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  .header2 {
-    flex-direction: column;
-    padding: 10px;
-  }
-
-  .header-content {
-    order: 2;
-    width: 100%;
-    margin: 10px 0;
-  }
-
-  .header-left, .header-right {
-    order: 1;
-    width: 100%;
-    justify-content: center;
-    margin: 5px 0;
-  }
-
-  .main-nav ul {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .main-nav a {
-    font-size: 0.85em;
+    font-size: 14px;
     padding: 5px 10px;
   }
 
-  .logo {
-    height: 40px;
+  .welcome-message {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .auth-buttons {
+    gap: 8px;
+  }
+
+  .auth-buttons button {
+    padding: 7px 14px;
+    font-size: 12px;
   }
 }
 
 @media screen and (max-width: 480px) {
   .header2 {
-    padding: 8px;
+    padding: 8px 10px;
   }
 
-  .main-nav ul {
-    gap: 5px;
-  }
-
-  .main-nav a {
-    font-size: 0.8em;
-    padding: 4px 8px;
+  .header-content {
+    gap: 10px;
   }
 
   .logo {
-    height: 35px;
+    height: 30px;
+  }
+
+  .main-nav ul {
+    gap: 8px;
+  }
+
+  .main-nav a {
+    font-size: 13px;
+    padding: 4px 8px;
+  }
+
+  .welcome-message {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .auth-buttons {
+    gap: 6px;
+  }
+
+  .auth-buttons button {
+    padding: 6px 12px;
+    font-size: 11px;
   }
 }
 
@@ -709,19 +738,15 @@ button:hover {
 
 /* Content Container - Used for both Meeting Creator and OneDrive Uploader */
 .content-container {
-  background: rgba(255, 255, 255, 0.1);
   max-width: 800px;
-  margin: 200px auto 20px;
+  margin: 120px auto 40px;
   padding: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   border-radius: 15px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-  color: #333;
-  text-align: center;
-  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  position: relative;
-  z-index: 1;
+  text-align: center;
 }
 
 .content-container:hover {
@@ -731,14 +756,15 @@ button:hover {
 
 /* Specific styling for the meeting creator container */
 .meeting-creator-container {
-  margin: 200px auto 30px;
-  min-height: 60vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  max-width: 800px;
+  margin: 120px auto 40px;
+  padding: 30px;
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: center;
 }
 
 /* Meeting creator title */
@@ -1027,7 +1053,8 @@ button:hover {
 @media screen and (max-width: 768px) {
   .content-container {
     max-width: 95%;
-    padding: 25px;
+    margin: 100px auto 30px;
+    padding: 20px;
   }
   
   .content-container h2 {
@@ -1102,12 +1129,12 @@ button:hover {
   /* Content container adjustments */
   .content-container {
     max-width: 95%;
-    margin: 170px auto 20px;
+    margin: 100px auto 30px;
     padding: 20px;
   }
   
   .meeting-creator-container {
-    margin: 220px auto 30px;
+    margin: 100px auto 30px;
   }
   
   /* Form adjustments */
@@ -1158,7 +1185,7 @@ button:hover {
   }
   
   .meeting-creator-container {
-    margin: 220px auto 30px;
+    margin: 80px auto 20px;
   }
   
   .content-container h2 {
@@ -1942,118 +1969,6 @@ input:checked + .toggle-slider:before {
   .auth-buttons button {
     padding: 6px 12px;
     font-size: 0.85em;
-  }
-}
-
-/* Welcome Message and Auth Buttons */
-.welcome-message {
-  color: #2d2e4a;
-  font-size: 16px;
-  font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
-
-.welcome-message #welcomeText,
-.welcome-message #userName {
-  color: #2d2e4a;
-  font-weight: 500;
-  margin: 0;
-  transition: all 0.3s ease;
-}
-
-.welcome-message.signed-in {
-  background: rgba(45, 46, 74, 0.1);
-}
-
-.welcome-message.signed-in #userName {
-  color: #2d2e4a;
-  font-weight: 600;
-}
-
-.auth-buttons {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.auth-buttons button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background: linear-gradient(135deg, rgba(45, 46, 74, 0.9), #34415a);
-  color: white;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9em;
-  white-space: nowrap;
-  min-width: 80px;
-}
-
-.auth-buttons button:hover {
-  background: linear-gradient(135deg, #34415a, rgba(45, 46, 74, 0.9));
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Responsive adjustments for welcome message and auth buttons */
-@media screen and (max-width: 1024px) {
-  .welcome-message {
-    font-size: 0.85em;
-    padding: 6px 10px;
-  }
-
-  .auth-buttons button {
-    padding: 6px 12px;
-    font-size: 0.85em;
-    min-width: 70px;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  .header-left {
-    width: 100%;
-    justify-content: center;
-    margin: 5px 0;
-  }
-
-  .header-right {
-    width: 100%;
-    justify-content: center;
-    margin: 5px 0;
-  }
-
-  .welcome-message {
-    font-size: 0.8em;
-    padding: 5px 8px;
-  }
-
-  .auth-buttons {
-    justify-content: center;
-  }
-
-  .auth-buttons button {
-    padding: 5px 10px;
-    font-size: 0.8em;
-    min-width: 65px;
-  }
-}
-
-@media screen and (max-width: 480px) {
-  .welcome-message {
-    font-size: 0.75em;
-    padding: 4px 6px;
-  }
-
-  .auth-buttons button {
-    padding: 4px 8px;
-    font-size: 0.75em;
-    min-width: 60px;
   }
 }
 
