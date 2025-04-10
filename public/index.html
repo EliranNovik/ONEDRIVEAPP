@@ -187,9 +187,39 @@
   <!-- Removed meeting modal markup and meeting-related scripts -->
   <script src="app.js"></script>
   <script>
-    // Check sign-in state and update welcome message on page load
+    // Hamburger menu functionality
     document.addEventListener('DOMContentLoaded', function() {
-      // Check MSAL accounts first
+      const hamburger = document.querySelector('.hamburger-menu');
+      const nav = document.querySelector('.main-nav');
+      const body = document.body;
+
+      hamburger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        hamburger.classList.toggle('active');
+        nav.classList.toggle('active');
+        body.classList.toggle('menu-open');
+      });
+
+      // Close menu when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!nav.contains(e.target) && !hamburger.contains(e.target)) {
+          hamburger.classList.remove('active');
+          nav.classList.remove('active');
+          body.classList.remove('menu-open');
+        }
+      });
+
+      // Close menu when clicking on a nav link
+      const navLinks = document.querySelectorAll('.main-nav a');
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          hamburger.classList.remove('active');
+          nav.classList.remove('active');
+          body.classList.remove('menu-open');
+        });
+      });
+
+      // Check if user is already signed in
       const accounts = msalInstance.getAllAccounts();
       if (accounts.length > 0) {
         const account = accounts[0];
@@ -203,30 +233,20 @@
       handleRedirectPromise();
     });
 
-    // Only run menu-related code if the menu exists
-    const menu = document.getElementById("menu");
-    const hamburger = document.querySelector('.hamburger-menu');
-    
-    if (menu && hamburger) {
-      // Toggle hamburger menu visibility
-      function toggleMenu() {
-        menu.classList.toggle("active");
-        hamburger.classList.toggle("active");
-        
-        // Add animation delay to menu items
-        const menuItems = menu.querySelectorAll('li');
-        menuItems.forEach((item, index) => {
-          item.style.setProperty('--i', index);
-        });
-      }
-      
-      // Close menu when clicking outside
-      document.addEventListener('click', function(event) {
-        if (!menu.contains(event.target) && !hamburger.contains(event.target) && menu.classList.contains('active')) {
-          menu.classList.remove('active');
-          hamburger.classList.remove('active');
+    // Function to handle redirect promise
+    async function handleRedirectPromise() {
+      try {
+        const response = await msalInstance.handleRedirectPromise();
+        if (response) {
+          const account = response.account;
+          msalInstance.setActiveAccount(account);
+          updateWelcomeMessage(account.name);
+          document.getElementById('signin-button').style.display = 'none';
+          document.getElementById('signout-button').style.display = 'inline-block';
         }
-      });
+      } catch (error) {
+        console.error('Error during redirect:', error);
+      }
     }
 
     // Update welcome message to use SweetAlert2 toast
@@ -382,29 +402,6 @@
             title: 'Failed to send email. Please try again.'
           });
         }
-      });
-    });
-
-    // Hamburger menu functionality
-    document.addEventListener('DOMContentLoaded', function() {
-      const hamburger = document.querySelector('.hamburger-menu');
-      const nav = document.querySelector('.main-nav');
-      const body = document.body;
-
-      hamburger.addEventListener('click', function() {
-        hamburger.classList.toggle('active');
-        nav.classList.toggle('active');
-        body.classList.toggle('menu-open');
-      });
-
-      // Close menu when clicking on a nav link
-      const navLinks = document.querySelectorAll('.main-nav a');
-      navLinks.forEach(link => {
-        link.addEventListener('click', function() {
-          hamburger.classList.remove('active');
-          nav.classList.remove('active');
-          body.classList.remove('menu-open');
-        });
       });
     });
   </script>
