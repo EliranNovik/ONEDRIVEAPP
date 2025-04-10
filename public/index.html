@@ -72,6 +72,12 @@
   <script> window.REDIRECT_URI = "https://onedriveapp.onrender.com"; </script>
 
   <header class="header2">
+    <div class="header-left">
+      <div class="welcome-message" id="welcomeMessage">
+        <span id="welcomeText">Please sign in</span>
+        <span id="userName" style="display: none;"></span>
+      </div>
+    </div>
     <div class="header-content">
       <img src="DPLOGO.png" alt="Logo" class="logo">
       
@@ -86,10 +92,6 @@
       </nav>
     </div>
     <div class="header-right">
-      <div class="welcome-message" id="welcomeMessage">
-        <span id="welcomeText">Please sign in</span>
-        <span id="userName" style="display: none;"></span>
-      </div>
       <div class="auth-buttons">
         <button id="signin-button">Sign In</button>
         <button id="signout-button" style="display:none;">My OneDrive</button>

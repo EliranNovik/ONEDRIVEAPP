@@ -35,7 +35,8 @@ body {
   z-index: 1000;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.9);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 20px 0;
+  padding: 30px 0;
+  min-height: 140px;
   transition: all 0.3s ease;
   display: flex;
   justify-content: space-between;
@@ -50,15 +51,28 @@ body {
   align-items: center;
   gap: 20px;
   padding: 0 20px;
-  margin: 0 auto;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+  margin-right: auto;
+  min-width: 200px;
 }
 
 .header-right {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
   padding: 0 20px;
+  margin-left: auto;
+  min-width: 200px;
 }
 
 .logo {
@@ -157,23 +171,31 @@ body {
   .header2 {
     flex-direction: column;
     padding: 15px 0;
+    min-height: auto;
   }
 
   .header-content {
-    margin-bottom: 15px;
+    position: relative;
+    left: auto;
+    transform: none;
+    margin: 0 auto 15px;
+    order: 2;
+  }
+
+  .header-left {
+    width: 100%;
+    justify-content: center;
+    margin: 10px 0;
+    order: 1;
+    min-width: auto;
   }
 
   .header-right {
-    margin-top: 10px;
-    gap: 20px;
-  }
-
-  .welcome-message {
-    margin-bottom: 15px;
-  }
-
-  .auth-buttons {
-    margin-top: 15px;
+    width: 100%;
+    justify-content: center;
+    margin: 10px 0;
+    order: 3;
+    min-width: auto;
   }
 
   .content-container {
@@ -232,8 +254,6 @@ button:hover {
 .auth-buttons {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
-  padding: 5px 0;
 }
 
 .auth-buttons button {
@@ -1889,7 +1909,6 @@ input:checked + .toggle-slider:before {
 .welcome-message {
   color: #f0eff2;
   font-size: 1.1em;
-  margin-bottom: 10px;
   padding: 10px 20px;
   background: #2b334a;
   border-radius: 8px;
@@ -1898,6 +1917,7 @@ input:checked + .toggle-slider:before {
   opacity: 1;
   transform: none;
   animation: none;
+  white-space: nowrap;
 }
 
 .welcome-message #userName {
