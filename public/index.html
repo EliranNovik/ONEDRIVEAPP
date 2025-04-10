@@ -92,12 +92,18 @@
     <div class="header-content">
       <img src="DPLOGO.png" alt="Logo" class="logo">
       
+      <!-- Hamburger Menu Button -->
+      <div class="hamburger-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      
       <!-- Navigation Menu -->
       <nav class="main-nav">
         <ul>
           <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
           <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
-          <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
           <li><a href="/teams" id="create-meeting-link">Create a Meeting</a></li>
         </ul>
       </nav>
@@ -376,6 +382,29 @@
             title: 'Failed to send email. Please try again.'
           });
         }
+      });
+    });
+
+    // Hamburger menu functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburger = document.querySelector('.hamburger-menu');
+      const nav = document.querySelector('.main-nav');
+      const body = document.body;
+
+      hamburger.addEventListener('click', function() {
+        hamburger.classList.toggle('active');
+        nav.classList.toggle('active');
+        body.classList.toggle('menu-open');
+      });
+
+      // Close menu when clicking on a nav link
+      const navLinks = document.querySelectorAll('.main-nav a');
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          hamburger.classList.remove('active');
+          nav.classList.remove('active');
+          body.classList.remove('menu-open');
+        });
       });
     });
   </script>
