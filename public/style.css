@@ -1407,15 +1407,18 @@ body.menu-open {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 5px;
-  margin-bottom: 15px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
 }
 
 .datetime-picker-calendar .weekday {
   text-align: center;
-  font-weight: 600;
-  color: #2d2e4a;
+  font-weight: bold;
+  color: #253847;
   padding: 5px;
-  font-size: 0.8em;
+  background: rgba(37, 56, 71, 0.1);
+  border-radius: 4px;
 }
 
 .datetime-picker-calendar .day {
@@ -1423,25 +1426,30 @@ body.menu-open {
   padding: 8px;
   cursor: pointer;
   border-radius: 4px;
-  transition: all 0.2s ease;
+  color: #253847;
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
 }
 
 .datetime-picker-calendar .day:hover {
-  background-color: rgba(126, 165, 204, 0.1);
+  background: rgba(37, 56, 71, 0.1);
+  transform: scale(1.05);
 }
 
 .datetime-picker-calendar .day.selected {
-  background-color: #c49936;
-  color: white;
+  background: #253847;
+  color: #f0eff2;
 }
 
 .datetime-picker-calendar .day.today {
-  border: 1px solid #364459;
+  background: rgba(37, 56, 71, 0.2);
+  font-weight: bold;
 }
 
 .datetime-picker-calendar .day.disabled {
-  color: #ccc;
+  color: #999;
   cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .datetime-picker-time {
@@ -1454,38 +1462,22 @@ body.menu-open {
 .time-selector {
   display: flex;
   align-items: center;
-  background-color: #1c3043;
-  border-radius: 4px;
-  padding: 5px;
-}
-
-.time-selector button {
-  background: none;
-  border: none;
-  color: #2d2e4a;
-  font-size: 1.2em;
-  cursor: pointer;
-  padding: 5px;
-  width: auto;
-  max-width: none;
-  margin: 0;
-}
-
-.time-selector button:hover {
-  color: #344b62;
-  background: none;
-  transform: none;
-  box-shadow: none;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 8px;
 }
 
 .time-selector input {
-  width: 50px;
+  width: 40px;
   text-align: center;
-  border: none;
-  background: none;
-  font-size: 1em;
   padding: 5px;
-  margin: 0 5px;
+  border: 1px solid #253847;
+  border-radius: 4px;
+  color: #253847;
+  font-weight: 500;
 }
 
 .time-selector select {
@@ -1540,27 +1532,28 @@ body.menu-open {
 /* Quick date selection */
 .quick-date-selection {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
-  margin: 15px 0;
+  margin-bottom: 15px;
 }
 
 .quick-date-option {
-  padding: 8px 12px;
-  background-color: #1f3348;
-  border-radius: 20px;
-  font-size: 0.9em;
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #253847;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  color: #253847;
+  transition: all 0.3s ease;
 }
 
 .quick-date-option:hover {
-  background-color: rgba(126, 165, 204, 0.1);
+  background: rgba(37, 56, 71, 0.1);
 }
 
 .quick-date-option.selected {
-  background-color: #2d4052;
-  color: white;
+  background: #253847;
+  color: #f0eff2;
 }
 
 /* Time zone selector */
@@ -2058,6 +2051,76 @@ input:checked + .toggle-slider:before {
   background: linear-gradient(135deg, #4a5568, #718096);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Meeting Form Labels */
+.meeting-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: #253847;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Date and Time Picker Text */
+#selected-datetime {
+  color: #253847;
+  font-weight: 500;
+}
+
+/* Meeting Topic Input */
+#topic {
+  color: #253847;
+  font-weight: 500;
+}
+
+/* Time Selector */
+.time-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.time-selector input {
+  width: 40px;
+  text-align: center;
+  padding: 5px;
+  border: 1px solid #253847;
+  border-radius: 4px;
+  color: #253847;
+  font-weight: 500;
+}
+
+/* Quick Date Selection */
+.quick-date-selection {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.quick-date-option {
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #253847;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #253847;
+  transition: all 0.3s ease;
+}
+
+.quick-date-option:hover {
+  background: rgba(37, 56, 71, 0.1);
+}
+
+.quick-date-option.selected {
+  background: #253847;
+  color: #f0eff2;
 }
 
 
