@@ -8,6 +8,64 @@
   <script src="https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js"></script>
   <!-- Add Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Add SweetAlert2 -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    /* Toast Message Styles */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .toast {
+      background: linear-gradient(135deg, rgba(45, 46, 74, 0.985), #34415a);
+      color: #f0eff2;
+      padding: 15px 25px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 300px;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .toast.success {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+    }
+
+    .toast.error {
+      background: linear-gradient(135deg, #f44336, #d32f2f);
+    }
+
+    .toast.info {
+      background: linear-gradient(135deg, #2196F3, #1976D2);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -35,7 +93,6 @@
 
   <div class="container">
     <header>
-      <br><br><br><br>
       <div class="auth-buttons">
         <button id="signin-button">Sign In</button>
         <button id="signout-button" style="display:none;">My OneDrive</button>
@@ -74,6 +131,35 @@
   <!-- Removed meeting modal markup and meeting-related scripts -->
   <script src="app.js"></script>
   <script>
+    // Configure SweetAlert2 Toast
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer);
+        toast.addEventListener('mouseleave', Swal.resumeTimer);
+      }
+    });
+
+    // Check sign-in state and update welcome message on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check MSAL accounts first
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        const account = accounts[0];
+        msalInstance.setActiveAccount(account);
+        updateWelcomeMessage(account.name);
+        document.getElementById('signin-button').style.display = 'none';
+        document.getElementById('signout-button').style.display = 'inline-block';
+      }
+
+      // Handle any redirect response
+      handleRedirectPromise();
+    });
+
     // Only run menu-related code if the menu exists
     const menu = document.getElementById("menu");
     const hamburger = document.querySelector('.hamburger-menu');
@@ -99,6 +185,33 @@
         }
       });
     }
+
+    // Update welcome message to use SweetAlert2 toast
+    function updateWelcomeMessage(userName) {
+      const welcomeMessage = document.querySelector('.welcome-message');
+      if (userName) {
+        welcomeMessage.classList.add('signed-in');
+        document.getElementById('userName').textContent = userName;
+        document.getElementById('welcomeText').style.display = 'none';
+        document.getElementById('userName').style.display = 'inline-block';
+        // Only show toast if this is a new sign-in (not page refresh)
+        if (sessionStorage.getItem('lastSignIn') !== userName) {
+          Toast.fire({
+            icon: 'success',
+            title: `Welcome, ${userName}!`
+          });
+          sessionStorage.setItem('lastSignIn', userName);
+        }
+      } else {
+        welcomeMessage.classList.remove('signed-in');
+        document.getElementById('welcomeText').style.display = 'inline-block';
+        document.getElementById('userName').style.display = 'none';
+        sessionStorage.removeItem('lastSignIn');
+      }
+    }
   </script>
+
+  <!-- Add toast container -->
+  <div class="toast-container" id="toastContainer"></div>
 </body>
 </html>

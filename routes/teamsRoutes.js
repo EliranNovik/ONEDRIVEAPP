@@ -14,6 +14,7 @@ const msalConfig = {
     clientId: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`,
+    redirectUri: "https://onedriveapp.onrender.com"
   }
 };
 
@@ -37,7 +38,7 @@ router.get("/login", async (req, res) => {
   try {
     const authUrl = await cca.getAuthCodeUrl({
       scopes: ["User.Read", "OnlineMeetings.ReadWrite", "Calendars.ReadWrite"],
-      redirectUri: process.env.REDIRECT_URI,
+      redirectUri: "https://onedriveapp.onrender.com"
     });
     res.redirect(authUrl);
   } catch (error) {
@@ -46,13 +47,13 @@ router.get("/login", async (req, res) => {
   }
 });
 
-// Callback Route – matches the REDIRECT_URI in .env
+// Callback Route
 router.get("/auth/callback", async (req, res) => {
   try {
     const tokenResponse = await cca.acquireTokenByCode({
       code: req.query.code,
       scopes: ["User.Read", "OnlineMeetings.ReadWrite", "Calendars.ReadWrite"],
-      redirectUri: process.env.REDIRECT_URI,
+      redirectUri: "https://onedriveapp.onrender.com"
     });
     req.session.accessToken = tokenResponse.accessToken;
     req.session.user = tokenResponse.account;

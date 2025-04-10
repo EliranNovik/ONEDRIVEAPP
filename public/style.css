@@ -7,7 +7,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #1b1e2f url('pic2.jpg') center fixed;
+  background: #1b1e2f url('GREY.jpg') center fixed;
   background-size: cover;
   color: #fff;
 }
@@ -15,9 +15,15 @@ body {
 /* Main Container for OneDrive App */
 .container {
   max-width: 900px;
-  margin: 20px auto;
-  padding: 30px 40px;
-  border-radius: 12px;
+  margin: 150px auto 20px;
+  padding: 20px 40px;
+  border-radius: 15px;
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
 }
 
 /* Header Styling */
@@ -25,12 +31,12 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  background-color: rgba(220, 221, 221, 0.515);
+  right: 0;
   z-index: 1000;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 20px 0;
-  position: relative;
+  transition: all 0.3s ease;
 }
 
 .header-content {
@@ -39,12 +45,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
+  gap: 20px;
   padding: 0 20px;
 }
 
 .logo {
-  height: 50px;
+  height: 65px;
   width: auto;
   display: block;
   margin: 0 auto;
@@ -53,6 +59,8 @@ body {
 /* Main Navigation */
 .main-nav {
   width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .main-nav ul {
@@ -62,66 +70,90 @@ body {
   padding: 0;
   justify-content: center;
   gap: 30px;
+  position: relative;
 }
 
 .main-nav a {
   color: #2d2e4a;
   text-decoration: none;
-  font-size: 1.3em;
-  font-weight: 600;
+  font-size: 1.1em;
+  font-weight: 500;
   padding: 12px 20px;
   position: relative;
   transition: all 0.3s ease;
   border-radius: 6px;
   letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
 }
 
-.main-nav a::before {
+/* Modern hover animation */
+.main-nav a::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background-color: #ae8f28;
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 0.3s ease;
+  left: 50%;
+  width: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #d19a41, #f5f5f5);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
 }
 
 .main-nav a:hover {
-  transform: scale(1.03);
-  box-shadow: 0 4px 12px rgb(53, 55, 90);
   color: #ffffff;
-  background: #2f3858;
+  background: linear-gradient(135deg, rgba(41, 42, 70, 0.8), rgba(61, 76, 108, 0.8));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.main-nav a:hover::before {
-  transform: scaleX(1);
-  transform-origin: left;
+.main-nav a:hover::after {
+  width: 80%;
 }
 
 /* Responsive adjustments */
 @media screen and (max-width: 768px) {
-  .header2 {
-    padding: 15px 0;
+  .container {
+    margin: 170px auto 20px;
+    padding: 15px 20px;
   }
 
-  .header-content {
-    gap: 15px;
+  .content-container {
+    margin: 170px auto 20px;
+    padding: 20px;
   }
 
   .main-nav ul {
+    flex-direction: column;
+    align-items: center;
     gap: 15px;
   }
 
   .main-nav a {
-    font-size: 1.2em;
-    padding: 10px 15px;
+    width: 100%;
+    text-align: center;
+    padding: 15px;
+  }
+
+  .main-nav a::after {
+    display: none;
+  }
+
+  .main-nav a:hover {
+    transform: translateY(-2px);
+  }
+
+  .header2 {
+    padding: 15px 0;
   }
 }
 
 @media screen and (max-width: 480px) {
+  .container {
+    margin: 170px auto 20px;
+    padding: 15px;
+  }
+
   .header2 {
     padding: 10px 0;
   }
@@ -159,8 +191,9 @@ button:hover {
 
 /* Authentication Buttons Container */
 .auth-buttons {
-  margin-top: 10px;
+  margin-top: 0;
   text-align: center;
+  padding: 5px 0;
 }
 
 .auth-buttons button {
@@ -241,7 +274,7 @@ button:hover {
 
 .drop-zone.hover {
   background-color: rgba(126, 165, 204, 0.15);
-  border-color: #7ea5cc;
+  border-color: #d7a03f;
   transform: scale(1.01);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
@@ -252,7 +285,7 @@ button:hover {
 }
 
 .drop-zone.files-selected .drop-text {
-  color: #7ea5cc;
+  color: #d8993f;
 }
 
 .browse-button {
@@ -562,7 +595,7 @@ button:hover {
 }
 
 .modal-content {
-  background-color: #fff;
+  background-color: #fefefe;
   margin: 10% auto;
   padding: 20px;
   border-radius: 8px;
@@ -587,17 +620,19 @@ button:hover {
 
 /* Content Container - Used for both Meeting Creator and OneDrive Uploader */
 .content-container {
-  background-color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
   max-width: 800px;
-  margin: 20px auto;
-  padding: 40px;
+  margin: 150px auto 20px;
+  padding: 30px;
   border-radius: 15px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   color: #333;
   text-align: center;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .content-container:hover {
@@ -607,11 +642,14 @@ button:hover {
 
 /* Specific styling for the meeting creator container */
 .meeting-creator-container {
-  margin: 120px auto 30px;
+  margin: 200px auto 30px;
   min-height: 60vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Meeting creator title */
@@ -631,7 +669,7 @@ button:hover {
   transform: translateX(-50%);
   width: 80px;
   height: 4px;
-  background: linear-gradient(90deg, #2d2e4a, #7ea5cc);
+  background: linear-gradient(90deg, #2d2e4a, #32465a);
   border-radius: 2px;
 }
 
@@ -815,7 +853,7 @@ button:hover {
 .content-container .link-actions button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  background: #7ea5cc;
+  background: #436383;
 }
 
 .content-container .link-actions button i {
@@ -825,7 +863,7 @@ button:hover {
 #copyMessage {
   display: none;
   font-size: 1em;
-  color: #7ea5cc;
+  color: #2b4259;
   font-weight: bold;
   margin-left: 10px;
   opacity: 0;
@@ -888,7 +926,7 @@ button:hover {
 }
 
 .content-container .file-list-container li .file-name i {
-  color: #7ea5cc;
+  color: #c59932;
 }
 
 .content-container .file-list-container li .file-size {
@@ -901,7 +939,6 @@ button:hover {
   .content-container {
     max-width: 95%;
     padding: 25px;
-    margin: 15px auto;
   }
   
   .content-container h2 {
@@ -976,13 +1013,12 @@ button:hover {
   /* Content container adjustments */
   .content-container {
     max-width: 95%;
-    margin: 15px auto;
+    margin: 170px auto 20px;
     padding: 20px;
   }
   
   .meeting-creator-container {
-    margin: 100px auto 20px;
-    min-height: auto;
+    margin: 220px auto 30px;
   }
   
   /* Form adjustments */
@@ -1033,8 +1069,7 @@ button:hover {
   }
   
   .meeting-creator-container {
-    margin: 80px auto 15px;
-    padding: 15px;
+    margin: 220px auto 30px;
   }
   
   .content-container h2 {
@@ -1095,7 +1130,7 @@ button:hover {
 .content-container select:focus,
 .content-container textarea:focus {
   outline: none;
-  border-color: #7ea5cc;
+  border-color: #d29135;
   box-shadow: 0 0 0 3px rgba(126, 165, 204, 0.2);
   background-color: #fff;
 }
@@ -1121,7 +1156,7 @@ button:hover {
 }
 
 .datetime-picker-trigger:hover {
-  border-color: #7ea5cc;
+  border-color: #ca9b36;
   background-color: rgba(255, 255, 255, 0.9);
 }
 
@@ -1214,12 +1249,12 @@ button:hover {
 }
 
 .datetime-picker-calendar .day.selected {
-  background-color: #7ea5cc;
+  background-color: #c49936;
   color: white;
 }
 
 .datetime-picker-calendar .day.today {
-  border: 1px solid #7ea5cc;
+  border: 1px solid #364459;
 }
 
 .datetime-picker-calendar .day.disabled {
@@ -1255,7 +1290,7 @@ button:hover {
 }
 
 .time-selector button:hover {
-  color: #7ea5cc;
+  color: #344b62;
   background: none;
   transform: none;
   box-shadow: none;
@@ -1304,7 +1339,7 @@ button:hover {
 }
 
 .datetime-picker-footer .apply-btn {
-  background-color: #7ea5cc;
+  background-color: #344455;
   color: white;
 }
 
@@ -1315,7 +1350,7 @@ button:hover {
 }
 
 .datetime-picker-footer .apply-btn:hover {
-  background-color: #6a8fb3;
+  background-color: #283d53;
   transform: none;
   box-shadow: none;
 }
@@ -1342,7 +1377,7 @@ button:hover {
 }
 
 .quick-date-option.selected {
-  background-color: #7ea5cc;
+  background-color: #2d4052;
   color: white;
 }
 
@@ -1397,7 +1432,7 @@ button:hover {
 }
 
 .meeting-type-option.selected {
-  border-color: #7ea5cc;
+  border-color: #d0b04982;
   background-color: rgba(126, 165, 204, 0.1);
 }
 
@@ -1716,7 +1751,7 @@ input:checked + .toggle-slider:before {
 #emailForm button {
   width: 100%;
   padding: 10px;
-  background-color: #0078d4;
+  background-color: #2a4051;
   color: white;
   border: none;
   border-radius: 4px;
@@ -1725,7 +1760,7 @@ input:checked + .toggle-slider:before {
 }
 
 #emailForm button:hover {
-  background-color: #005a9e;
+  background-color: #437398;
 }
 
 /* Template Selection Modal Styles */

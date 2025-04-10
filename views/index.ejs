@@ -6,6 +6,9 @@
   <title>Create a Meeting</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Add SweetAlert2 -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <!-- Header with Navigation -->
@@ -144,7 +147,6 @@
         </div>
       </div>
 
-      <p><a href="/teams/logout">Logout</a></p>
     <% } %>
   </div>
   
@@ -156,7 +158,7 @@
       auth: {
         clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",
         authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
-        redirectUri: window.location.origin + "/teams/auth/callback"
+        redirectUri: "http://localhost:3000/onedriveapp"
       }
     };
 
@@ -407,6 +409,19 @@
         datetimeDropdown.classList.remove("active");
       });
 
+      // Configure SweetAlert2 Toast
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer);
+          toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+      });
+
       // Handle meeting form submission
       document.getElementById("meetingForm")?.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -414,7 +429,10 @@
         const dateTime = document.getElementById("dateTime").value;
         
         if (!dateTime) {
-          alert("Please select a date and time for the meeting");
+          Toast.fire({
+            icon: 'error',
+            title: 'Please select a date and time for the meeting'
+          });
           return;
         }
         
@@ -430,39 +448,37 @@
             joinLink.href = data.meetingLink;
             document.getElementById("meetingLinkContainer").style.display = "block";
             document.getElementById("copyButton").onclick = function() {
-              // Create a temporary element with the formatted link
-              const tempElement = document.createElement('div');
-              tempElement.innerHTML = `<a href="${data.meetingLink}">Click here to join meeting</a>`;
-              document.body.appendChild(tempElement);
-              
-              // Select the element
-              const range = document.createRange();
-              range.selectNode(tempElement);
-              window.getSelection().removeAllRanges();
-              window.getSelection().addRange(range);
-              
-              // Execute copy command
-              document.execCommand('copy');
-              
-              // Clean up
-              window.getSelection().removeAllRanges();
-              document.body.removeChild(tempElement);
-              
-              // Show success message
-              alert("Meeting link copied to clipboard!");
+              navigator.clipboard.writeText(data.meetingLink)
+                .then(() => {
+                  Toast.fire({
+                    icon: 'success',
+                    title: 'Meeting link copied to clipboard!'
+                  });
+                })
+                .catch(() => {
+                  Toast.fire({
+                    icon: 'error',
+                    title: 'Failed to copy link. Please try manually.'
+                  });
+                });
             };
             
             // Add email button functionality
             document.getElementById("emailButton").onclick = function() {
-              // Show template selection modal
               document.getElementById("templateModal").style.display = "block";
             };
           } else {
-            alert("Error creating meeting");
+            Toast.fire({
+              icon: 'error',
+              title: 'Error creating meeting'
+            });
           }
         } catch (err) {
           console.error("Error:", err);
-          alert("Error creating meeting");
+          Toast.fire({
+            icon: 'error',
+            title: 'Error creating meeting'
+          });
         }
       });
 
@@ -538,15 +554,24 @@
 
           const data = await response.json();
           if (data.success) {
-            alert("Email sent successfully!");
+            Toast.fire({
+              icon: 'success',
+              title: 'Email sent successfully!'
+            });
             emailModal.style.display = "none";
             emailForm.reset();
           } else {
-            alert("Error sending email: " + (data.error || "Unknown error"));
+            Toast.fire({
+              icon: 'error',
+              title: `Error sending email: ${data.error || 'Unknown error'}`
+            });
           }
         } catch (err) {
           console.error("Error:", err);
-          alert("Error sending email");
+          Toast.fire({
+            icon: 'error',
+            title: 'Error sending email'
+          });
         }
       };
     });

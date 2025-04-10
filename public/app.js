@@ -1,8 +1,28 @@
+// Add SweetAlert2 script
+if (typeof Swal === 'undefined') {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+  document.head.appendChild(script);
+}
+
 // Global variables for selected files, access token, and created folder link
 let filesToUpload = [];
 let accessToken = null;
 let createdFolderLink = '';
 let currentAccount = null; // Store the current account
+
+// Configure SweetAlert2 Toast
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.addEventListener('mouseenter', Swal.stopTimer);
+    toast.addEventListener('mouseleave', Swal.resumeTimer);
+  }
+});
 
 // MSAL configuration for your OneDrive (Microsoft Graph) app
 const msalConfig = {
@@ -32,25 +52,24 @@ function isMobileDevice() {
 
 /* ---------------- Check for Existing Token in Session ---------------- */
 document.addEventListener("DOMContentLoaded", function() {
-  // Check for an existing token stored in the server session
+  // First check MSAL accounts
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length > 0) {
+    currentAccount = accounts[0];
+    msalInstance.setActiveAccount(currentAccount);
+    updateWelcomeMessage(currentAccount.name);
+    document.getElementById('signin-button').style.display = 'none';
+    document.getElementById('signout-button').style.display = 'inline-block';
+  }
+
+  // Then check server session
   fetch('/get-token')
     .then(response => response.json())
     .then(data => {
       if (data.token) {
         accessToken = data.token;
-        document.getElementById('signin-button').style.display = 'none';
-        document.getElementById('signout-button').style.display = 'inline-block';
-        console.log("Token retrieved from session:", accessToken);
-        
-        // Try to get the account from MSAL
-        const accounts = msalInstance.getAllAccounts();
-        if (accounts.length > 0) {
-          currentAccount = accounts[0];
-          msalInstance.setActiveAccount(currentAccount);
-          updateWelcomeMessage(currentAccount.name);
-          console.log("Account retrieved from MSAL:", currentAccount);
-        } else {
-          // If no accounts found but we have a token, try to handle the redirect
+        // If we have a token but no MSAL account, try to handle redirect
+        if (!currentAccount) {
           handleRedirectPromise();
         }
       }
@@ -87,11 +106,12 @@ async function handleRedirectPromise() {
     const response = await msalInstance.handleRedirectPromise();
     if (response) {
       console.log('Login successful');
-      const account = msalInstance.getAccount();
-      updateWelcomeMessage(account.name);
+      const account = response.account;
       currentAccount = account;
       msalInstance.setActiveAccount(currentAccount);
-      console.log("User signed in via redirect:", currentAccount);
+      updateWelcomeMessage(account.name);
+      document.getElementById('signin-button').style.display = 'none';
+      document.getElementById('signout-button').style.display = 'inline-block';
       
       // Get a token
       const tokenResponse = await msalInstance.acquireTokenSilent({ 
@@ -100,25 +120,13 @@ async function handleRedirectPromise() {
       });
       
       accessToken = tokenResponse.accessToken;
-      console.log("Access token acquired after redirect:", accessToken);
-      
-      // Update UI
-      document.getElementById('signin-button').style.display = 'none';
-      document.getElementById('signout-button').style.display = 'inline-block';
       
       // Save the token to the server session
-      const saveResponse = await fetch('/set-token', {
+      await fetch('/set-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: accessToken })
       });
-      
-      const saveData = await saveResponse.json();
-      if (saveData.success) {
-        console.log("Token saved in session after redirect.");
-      } else {
-        console.error("Error saving token after redirect:", saveData.message);
-      }
     }
   } catch (error) {
     console.error('Error during redirect:', error);
@@ -163,18 +171,23 @@ document.getElementById('signin-button').onclick = function () {
           })
           .catch(error => {
             console.error("Token acquisition error:", error);
-            alert("Error acquiring token. See console for details.");
+            Toast.fire({
+              icon: 'error',
+              title: 'Error acquiring token. See console for details.'
+            });
           });
       })
       .catch(error => {
         console.error("Login error:", error);
-        alert("Login failed. See console for details.");
+        Toast.fire({
+          icon: 'error',
+          title: 'Login failed. See console for details.'
+        });
       });
   }
 };
 
-// Sign out function now redirects to OneDrive instead of logging out.
-// Replace the URL below with your OneDrive for Business URL.
+// Sign out function now redirects to OneDrive instead of logging out
 document.getElementById('signout-button').onclick = function () {
   window.open("https://lawdecker-my.sharepoint.com", "_blank");
 };
@@ -399,18 +412,27 @@ async function acquireTokenInteractive() {
 // Upload files to OneDrive under a new folder created in the root directory
 document.getElementById('upload-button').onclick = async function () {
   if (filesToUpload.length === 0) {
-    alert('Please drag and drop at least one file.');
+    Toast.fire({
+      icon: 'error',
+      title: 'Please drag and drop at least one file.'
+    });
     return;
   }
   if (!accessToken) {
-    alert('Please sign in first to obtain an access token.');
+    Toast.fire({
+      icon: 'error',
+      title: 'Please sign in first to obtain an access token.'
+    });
     return;
   }
   
   const folderNameInput = document.getElementById('folderName');
   const folderName = folderNameInput ? folderNameInput.value.trim() : '';
   if (!folderName) {
-    alert('Please enter a new folder name.');
+    Toast.fire({
+      icon: 'error',
+      title: 'Please enter a new folder name.'
+    });
     return;
   }
   
@@ -514,9 +536,15 @@ document.getElementById('upload-button').onclick = async function () {
       // If we have an error object, log its details
       if (linkData.error) {
         console.error("API Error details:", linkData.error);
-        alert(`Error creating sharing link: ${linkData.error.message || 'Unknown error'}`);
+        Toast.fire({
+          icon: 'error',
+          title: `Error creating sharing link: ${linkData.error.message || 'Unknown error'}`
+        });
       } else {
-        alert("Error: Could not create a sharing link. The response format was unexpected.");
+        Toast.fire({
+          icon: 'error',
+          title: 'Error: Could not create a sharing link. The response format was unexpected.'
+        });
       }
     }
     
@@ -561,9 +589,17 @@ document.getElementById('upload-button').onclick = async function () {
     filesToUpload = [];
     if (folderNameInput) folderNameInput.value = '';
     
+    Toast.fire({
+      icon: 'success',
+      title: 'Files uploaded successfully!'
+    });
+    
   } catch (error) {
     console.error("Error during upload process:", error);
-    alert(`Error: ${error.message || 'Unknown error occurred during upload'}`);
+    Toast.fire({
+      icon: 'error',
+      title: `Error: ${error.message || 'Unknown error occurred during upload'}`
+    });
   }
 };
 
@@ -573,21 +609,23 @@ function copyLink() {
   if (link) {
     navigator.clipboard.writeText(link)
       .then(() => {
-        const copyMessage = document.getElementById("copyMessage");
-        if (copyMessage) {
-          copyMessage.classList.add("show");
-          setTimeout(() => {
-            copyMessage.classList.remove("show");
-          }, 2000);
-        }
+        Toast.fire({
+          icon: 'success',
+          title: 'Link copied to clipboard!'
+        });
       })
-      .catch(err => {
-        console.error("Failed to copy the link:", err);
-        alert("Failed to copy the link. Please try manually.");
+      .catch(() => {
+        Toast.fire({
+          icon: 'error',
+          title: 'Failed to copy the link. Please try manually.'
+        });
       });
   } else {
     console.error("No link available to copy.");
-    alert("No link available to copy. Please try again.");
+    Toast.fire({
+      icon: 'error',
+      title: 'No link available to copy. Please try again.'
+    });
   }
 }
 
@@ -652,11 +690,17 @@ if (meetingForm) {
           };
         }
       } else {
-        alert("Error creating meeting");
+        Toast.fire({
+          icon: 'error',
+          title: 'Error creating meeting'
+        });
       }
     } catch (err) {
       console.error("Error:", err);
-      alert("Error creating meeting");
+      Toast.fire({
+        icon: 'error',
+        title: 'Error creating meeting'
+      });
     }
   });
 }
