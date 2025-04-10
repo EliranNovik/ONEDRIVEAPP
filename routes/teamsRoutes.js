@@ -109,41 +109,25 @@ router.post("/create-meeting", checkAuth, async (req, res) => {
   }
 });
 
-// Email Route
+// Email sending route for document upload requests
 router.post("/send-email", checkAuth, async (req, res) => {
-  const { recipientEmail, recipientName, meetingTopic, meetingDate, meetingTime, meetingLink, language } = req.body;
-  
-  if (!recipientEmail || !meetingLink) {
-    return res.status(400).json({ error: "Recipient email and meeting link are required." });
-  }
+  const { to, subject, body, accessToken } = req.body;
 
   try {
-    // Read the appropriate email template
-    const templatePath = path.join(__dirname, '../public/email-templates', `${language || 'english'}.html`);
-    let emailTemplate = fs.readFileSync(templatePath, 'utf8');
-
-    // Replace placeholders with actual values
-    emailTemplate = emailTemplate
-      .replace('[Recipient Name]', recipientName || 'Guest')
-      .replace('[Meeting Topic]', meetingTopic || 'Meeting')
-      .replace('[Meeting Date]', meetingDate || '')
-      .replace('[Meeting Time]', meetingTime || '')
-      .replace('[Meeting Link]', meetingLink);
-
     // Send email using Microsoft Graph API
     const response = await axios.post(
       'https://graph.microsoft.com/v1.0/me/sendMail',
       {
         message: {
-          subject: `Meeting Invitation: ${meetingTopic}`,
+          subject: subject,
           body: {
             contentType: 'HTML',
-            content: emailTemplate
+            content: body
           },
           toRecipients: [
             {
               emailAddress: {
-                address: recipientEmail
+                address: to
               }
             }
           ]
@@ -151,16 +135,69 @@ router.post("/send-email", checkAuth, async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${req.session.accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
       }
     );
 
-    res.json({ success: true, message: 'Email sent successfully' });
+    if (response.status === 202) {
+      res.json({ success: true });
+    } else {
+      throw new Error('Failed to send email');
+    }
   } catch (error) {
-    console.error('Error sending email:', error);
-    res.status(500).json({ error: 'Failed to send email' });
+    console.error('Error sending email:', error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: error.response?.data?.error?.message || 'Failed to send email' 
+    });
+  }
+});
+
+// Email sending route for meeting invitations
+router.post("/send-meeting-email", checkAuth, async (req, res) => {
+  const { to, subject, body, accessToken } = req.body;
+
+  try {
+    // Send email using Microsoft Graph API
+    const response = await axios.post(
+      'https://graph.microsoft.com/v1.0/me/sendMail',
+      {
+        message: {
+          subject: subject,
+          body: {
+            contentType: 'HTML',
+            content: body
+          },
+          toRecipients: [
+            {
+              emailAddress: {
+                address: to
+              }
+            }
+          ]
+        }
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.status === 202) {
+      res.json({ success: true });
+    } else {
+      throw new Error('Failed to send email');
+    }
+  } catch (error) {
+    console.error('Error sending email:', error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: error.response?.data?.error?.message || 'Failed to send email' 
+    });
   }
 });
 

@@ -20,6 +20,17 @@
       z-index: 1000;
     }
 
+    /* Template Modal Styles */
+    .template-option h3 {
+      color: #1a365d;
+      margin-bottom: 10px;
+    }
+
+    .template-option p {
+      color: #2c5282;
+      margin-bottom: 15px;
+    }
+
     .toast {
       background: linear-gradient(135deg, rgba(45, 46, 74, 0.985), #34415a);
       color: #f0eff2;
@@ -93,8 +104,8 @@
     </div>
     <div class="header-right">
       <div class="auth-buttons">
-        <button id="signin-button">Sign In</button>
-        <button id="signout-button" style="display:none;">My OneDrive</button>
+        <button id="signin-button"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+        <button id="signout-button" style="display:none;"><i class="fas fa-folder-open"></i> My OneDrive</button>
       </div>
     </div>
   </header>
@@ -118,13 +129,53 @@
         </div>
         <button id="upload-button"><i class="fas fa-upload"></i> Upload Files</button>
       </div>
-      <div class="link-actions">
-        <button id="copyLinkBtn" style="display:none;"><i class="fas fa-copy"></i> Copy Link</button>
-        <span id="copyMessage" style="display:none;">Link Copied!</span>
-        <button id="openFolderBtn" style="display:none;"><i class="fas fa-folder-open"></i> Open Folder</button>
+      <div class="link-actions" style="display: none;">
+        <button id="copyLinkButton"><i class="fas fa-copy"></i> Copy Link</button>
+        <button id="openFolderButton"><i class="fas fa-folder-open"></i> Open Folder</button>
+        <button id="emailButton" style="display:none;"><i class="fas fa-envelope"></i> Send Email</button>
       </div>
       <div id="fileList" class="file-list-container"></div>
     </section>
+  </div>
+
+  <!-- Template Selection Modal -->
+  <div id="templateModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Select Email Template</h2>
+      <div class="template-options">
+        <div class="template-option" data-template="english">
+          <h3>English Template</h3>
+          <p>Professional English document upload request</p>
+          <button class="select-template">Select</button>
+        </div>
+        <div class="template-option" data-template="hebrew">
+          <h3>Hebrew Template</h3>
+          <p>Professional Hebrew document upload request</p>
+          <button class="select-template">Select</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Modal -->
+  <div id="emailModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Send Document Upload Request</h2>
+      <form id="emailForm">
+        <div class="form-group">
+          <label for="recipientEmail">Recipient Email:</label>
+          <input type="email" id="recipientEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="recipientName">Recipient Name:</label>
+          <input type="text" id="recipientName">
+        </div>
+        <input type="hidden" id="selectedTemplate" value="">
+        <button type="submit">Send Request</button>
+      </form>
+    </div>
   </div>
 
   <!-- Removed meeting modal markup and meeting-related scripts -->
@@ -195,6 +246,138 @@
         sessionStorage.removeItem('lastSignIn');
       }
     }
+
+    // Email Modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const emailButton = document.getElementById('emailButton');
+      const templateModal = document.getElementById('templateModal');
+      const emailModal = document.getElementById('emailModal');
+      const closeButtons = document.querySelectorAll('.close');
+      const emailForm = document.getElementById('emailForm');
+      const templateOptions = document.querySelectorAll('.template-option');
+
+      // Show template selection modal when clicking email button
+      emailButton.addEventListener('click', function() {
+        templateModal.style.display = 'block';
+      });
+
+      // Handle template selection
+      templateOptions.forEach(option => {
+        option.querySelector('.select-template').addEventListener('click', function() {
+          const template = option.getAttribute('data-template');
+          document.getElementById('selectedTemplate').value = template;
+          templateModal.style.display = 'none';
+          emailModal.style.display = 'block';
+        });
+      });
+
+      // Close modals when clicking close buttons
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          templateModal.style.display = 'none';
+          emailModal.style.display = 'none';
+        });
+      });
+
+      // Close modals when clicking outside
+      window.addEventListener('click', function(event) {
+        if (event.target === templateModal) {
+          templateModal.style.display = 'none';
+        }
+        if (event.target === emailModal) {
+          emailModal.style.display = 'none';
+        }
+      });
+
+      // Handle email form submission
+      emailForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const recipientEmail = document.getElementById('recipientEmail').value;
+        const recipientName = document.getElementById('recipientName').value;
+        const template = document.getElementById('selectedTemplate').value;
+        const folderLink = createdFolderLink;
+
+        try {
+          // Get a fresh token with Mail.Send scope
+          const tokenResponse = await msalInstance.acquireTokenSilent({
+            scopes: [...graphScopes, "Mail.Send"],
+            account: msalInstance.getActiveAccount()
+          });
+          accessToken = tokenResponse.accessToken;
+
+          const response = await fetch('/teams/send-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              to: recipientEmail,
+              subject: template === 'english' ? 'Document Upload Request' : 'בקשה להעלאת מסמכים',
+              body: template === 'english' 
+                ? `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <p>Dear ${recipientName || 'Client'},</p>
+                    
+                    <p>Thank you for choosing Decker Pex Levi Law Office for your legal needs. We appreciate your trust in our services.</p>
+                    
+                    <p>Please click the link below to upload your documents securely:</p>
+                    
+                    <p style="margin: 20px 0;">
+                      <a href="${folderLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        Upload Documents
+                      </a>
+                    </p>
+                    
+                    <p>Please be assured that all documents uploaded will be handled with the utmost confidentiality and security. Our professional team will review your documents promptly upon receipt.</p>
+                    
+                    <p>If you have any questions or require assistance, please don't hesitate to contact our office.</p>
+                    
+                    <p>Best regards,<br>Decker Pex Levi Law Office</p>
+                  </div>`
+                : `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl;">
+                    <p>שלום ${recipientName || 'לקוח'},</p>
+                    
+                    <p>תודה שבחרתם במשרד עורכי הדין דקר פקס לוי. אנו מעריכים את האמון שאתם נותנים בשירותינו.</p>
+                    
+                    <p>אנא לחץ על הקישור הבא להעלאת המסמכים שלך בצורה מאובטחת:</p>
+                    
+                    <p style="margin: 20px 0;">
+                      <a href="${folderLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        העלאת מסמכים
+                      </a>
+                    </p>
+                    
+                    <p>אנא שים לב שכל המסמכים שיועלו יטופלו בסודיות מוחלטת ובאבטחה מקסימלית. הצוות המקצועי שלנו יבדוק את המסמכים שלך מיד עם קבלתם.</p>
+                    
+                    <p>אם יש לך שאלות או שאתה זקוק לעזרה, אנא אל תהסס ליצור איתנו קשר.</p>
+                    
+                    <p>בברכה,<br>משרד עורכי הדין דקר פקס לוי</p>
+                  </div>`,
+              accessToken: accessToken
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.success) {
+            Toast.fire({
+              icon: 'success',
+              title: 'Email sent successfully!'
+            });
+            emailModal.style.display = 'none';
+            emailForm.reset();
+          } else {
+            throw new Error(result.message || 'Failed to send email');
+          }
+        } catch (error) {
+          console.error('Error sending email:', error);
+          Toast.fire({
+            icon: 'error',
+            title: 'Failed to send email. Please try again.'
+          });
+        }
+      });
+    });
   </script>
 
   <!-- Add toast container -->

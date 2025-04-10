@@ -2,7 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const nodemailer = require('nodemailer');
 const app = express();
+
+// Create a transporter using Gmail SMTP
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 // Set view engine and views directory
 app.set("view engine", "ejs");
@@ -34,7 +44,6 @@ app.post("/set-token", (req, res) => {
 app.get("/get-token", (req, res) => {
   res.json({ token: req.session.accessToken || null });
 });
-
 
 // Mount teams routes at /teams (must come after session middleware)
 const teamsRoutes = require("./routes/teamsRoutes.js");

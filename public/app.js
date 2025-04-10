@@ -29,7 +29,6 @@ const msalConfig = {
   auth: {
     clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",  
     authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
-    // Use the environment variable for redirectUri (set via window.REDIRECT_URI in your HTML)
     redirectUri: window.REDIRECT_URI || 'https://onedriveapp.onrender.com'
   }
 };
@@ -410,198 +409,143 @@ async function acquireTokenInteractive() {
 /* ---------------- File Upload ---------------- */
 
 // Upload files to OneDrive under a new folder created in the root directory
-document.getElementById('upload-button').onclick = async function () {
-  if (filesToUpload.length === 0) {
-    Toast.fire({
-      icon: 'error',
-      title: 'Please drag and drop at least one file.'
-    });
-    return;
-  }
-  if (!accessToken) {
-    Toast.fire({
-      icon: 'error',
-      title: 'Please sign in first to obtain an access token.'
-    });
-    return;
-  }
-  
-  const folderNameInput = document.getElementById('folderName');
-  const folderName = folderNameInput ? folderNameInput.value.trim() : '';
-  if (!folderName) {
-    Toast.fire({
-      icon: 'error',
-      title: 'Please enter a new folder name.'
-    });
-    return;
-  }
-  
-  // Create new folder in the root directory of OneDrive
-  let createFolderEndpoint = `https://graph.microsoft.com/v1.0/me/drive/root/children`;
-  
-  try {
-    const folderResponse = await fetch(createFolderEndpoint, {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + accessToken,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: folderName,
-        folder: {},
-        "@microsoft.graph.conflictBehavior": "rename"
-      })
-    });
-    
-    // Check if the response indicates an expired token
-    if (folderResponse.status === 401) {
-      const errorData = await folderResponse.json();
-      if (errorData.error && errorData.error.code === "InvalidAuthenticationToken") {
-        // Try to refresh the token
-        const refreshed = await refreshTokenIfNeeded();
-        if (refreshed) {
-          // Retry the folder creation with the new token
-          return document.getElementById('upload-button').onclick();
-        } else {
-          return; // Stop if token refresh failed
-        }
-      }
-    }
-    
-    // If we get here, either the request succeeded or it's a different error
-    if (!folderResponse.ok) {
-      throw new Error(`API error: ${folderResponse.status}`);
-    }
-    
-    const folderData = await folderResponse.json();
-    console.log("Folder created:", folderData);
-    // Save the webUrl as a fallback sharing link (if needed)
-    createdFolderLink = folderData.webUrl;
-    
-    // Create a sharing link (edit, anonymous) for the new folder
-    const linkResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${folderData.id}/createLink`, {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + accessToken,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        type: "edit",
-        scope: "anonymous"
-      })
-    });
-    
-    // Check if the response indicates an expired token
-    if (linkResponse.status === 401) {
-      const errorData = await linkResponse.json();
-      if (errorData.error && errorData.error.code === "InvalidAuthenticationToken") {
-        // Try to refresh the token
-        const refreshed = await refreshTokenIfNeeded();
-        if (refreshed) {
-          // Retry the link creation with the new token
-          return document.getElementById('upload-button').onclick();
-        } else {
-          return; // Stop if token refresh failed
-        }
-      }
-    }
-    
-    // If we get here, either the request succeeded or it's a different error
-    if (!linkResponse.ok) {
-      throw new Error(`API error: ${linkResponse.status}`);
-    }
-    
-    const linkData = await linkResponse.json();
-    console.log("Sharing link created:", linkData);
-    
-    // Check if linkData.link exists before accessing webUrl
-    if (linkData && linkData.link && linkData.link.webUrl) {
-      createdFolderLink = linkData.link.webUrl;
-      
-      // Show "Copy Link" and "Open Folder" buttons
-      const copyBtn = document.getElementById('copyLinkBtn');
-      const openFolderBtn = document.getElementById('openFolderBtn');
-      if (copyBtn) copyBtn.style.display = 'inline-block';
-      if (openFolderBtn) openFolderBtn.style.display = 'inline-block';
-      
-      copyBtn.onclick = function() {
-        copyLink();
-      };
-      
-      openFolderBtn.onclick = function() {
-        window.open(createdFolderLink, '_blank');
-      };
-    } else {
-      console.error("Invalid response format from createLink API:", linkData);
-      // If we have an error object, log its details
-      if (linkData.error) {
-        console.error("API Error details:", linkData.error);
+document.addEventListener('DOMContentLoaded', function() {
+  const uploadButton = document.getElementById('upload-button');
+  if (uploadButton) {
+    uploadButton.onclick = async function () {
+      if (filesToUpload.length === 0) {
         Toast.fire({
           icon: 'error',
-          title: `Error creating sharing link: ${linkData.error.message || 'Unknown error'}`
+          title: 'Please drag and drop at least one file.'
         });
-      } else {
+        return;
+      }
+      if (!accessToken) {
         Toast.fire({
           icon: 'error',
-          title: 'Error: Could not create a sharing link. The response format was unexpected.'
+          title: 'Please sign in first to obtain an access token.'
+        });
+        return;
+      }
+      
+      const folderNameInput = document.getElementById('folderName');
+      const folderName = folderNameInput ? folderNameInput.value.trim() : '';
+      if (!folderName) {
+        Toast.fire({
+          icon: 'error',
+          title: 'Please enter a new folder name.'
+        });
+        return;
+      }
+      
+      // Create new folder in the root directory of OneDrive
+      let createFolderEndpoint = `https://graph.microsoft.com/v1.0/me/drive/root/children`;
+      
+      try {
+        const folderResponse = await fetch(createFolderEndpoint, {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + accessToken,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name: folderName,
+            folder: {},
+            "@microsoft.graph.conflictBehavior": "rename"
+          })
+        });
+        
+        if (!folderResponse.ok) {
+          throw new Error(`API error: ${folderResponse.status}`);
+        }
+        
+        const folderData = await folderResponse.json();
+        console.log("Folder created:", folderData);
+        createdFolderLink = folderData.webUrl;
+        
+        // Create a sharing link (edit, anonymous) for the new folder
+        const linkResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${folderData.id}/createLink`, {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + accessToken,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            type: "edit",
+            scope: "anonymous"
+          })
+        });
+        
+        if (!linkResponse.ok) {
+          throw new Error(`API error: ${linkResponse.status}`);
+        }
+        
+        const linkData = await linkResponse.json();
+        console.log("Sharing link created:", linkData);
+        
+        if (linkData && linkData.link && linkData.link.webUrl) {
+          createdFolderLink = linkData.link.webUrl;
+          
+          // Show the link actions buttons
+          document.querySelector('.link-actions').style.display = 'flex';
+          
+          // Show success message immediately
+          Toast.fire({
+            icon: 'success',
+            title: 'Folder created successfully! Files are being uploaded in the background.'
+          });
+          
+          // Show the email button
+          showEmailButton();
+          
+          // Upload files in the background
+          uploadFilesInBackground(folderData.id, filesToUpload, accessToken);
+          
+          // Clear the file list and reset input fields
+          const fileListContainer = document.getElementById('fileList');
+          if (fileListContainer) fileListContainer.innerHTML = '';
+          filesToUpload = [];
+          if (folderNameInput) folderNameInput.value = '';
+          
+        } else {
+          throw new Error('Invalid response format from createLink API');
+        }
+      } catch (error) {
+        console.error("Error during upload process:", error);
+        Toast.fire({
+          icon: 'error',
+          title: `Error: ${error.message || 'Unknown error occurred during upload'}`
         });
       }
-    }
-    
-    // Upload each file into the newly created folder
-    for (const file of filesToUpload) {
-      const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${folderData.id}:/${encodeURIComponent(file.name)}:/content`;
+    };
+  }
+});
+
+// Function to upload files in the background
+async function uploadFilesInBackground(folderId, files, token) {
+  for (const file of files) {
+    try {
+      const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${folderId}:/${encodeURIComponent(file.name)}:/content`;
       const uploadResponse = await fetch(uploadUrl, {
         method: "PUT",
         headers: {
-          "Authorization": "Bearer " + accessToken,
+          "Authorization": "Bearer " + token,
           "Content-Type": file.type || "application/octet-stream"
         },
         body: file
       });
       
-      // Check if the response indicates an expired token
-      if (uploadResponse.status === 401) {
-        const errorData = await uploadResponse.json();
-        if (errorData.error && errorData.error.code === "InvalidAuthenticationToken") {
-          // Try to refresh the token
-          const refreshed = await refreshTokenIfNeeded();
-          if (refreshed) {
-            // Retry the file upload with the new token
-            return document.getElementById('upload-button').onclick();
-          } else {
-            return; // Stop if token refresh failed
-          }
-        }
-      }
-      
-      // If we get here, either the request succeeded or it's a different error
       if (!uploadResponse.ok) {
-        throw new Error(`API error: ${uploadResponse.status}`);
+        console.error(`Failed to upload ${file.name}`);
+        continue;
       }
       
-      const uploadData = await uploadResponse.json();
-      console.log(`File ${file.name} uploaded successfully:`, uploadData);
+      console.log(`File ${file.name} uploaded successfully`);
+    } catch (error) {
+      console.error(`Error uploading ${file.name}:`, error);
     }
-    
-    // Clear the file list and reset input fields
-    fileListContainer.innerHTML = '';
-    filesToUpload = [];
-    if (folderNameInput) folderNameInput.value = '';
-    
-    Toast.fire({
-      icon: 'success',
-      title: 'Files uploaded successfully!'
-    });
-    
-  } catch (error) {
-    console.error("Error during upload process:", error);
-    Toast.fire({
-      icon: 'error',
-      title: `Error: ${error.message || 'Unknown error occurred during upload'}`
-    });
   }
-};
+}
 
 /* ---------------- Copy Link Function with "Copied!" Message ---------------- */
 function copyLink() {
@@ -703,4 +647,40 @@ if (meetingForm) {
       });
     }
   });
+}
+
+// Email Templates
+const emailTemplates = {
+  english: {
+    subject: "Upload Documents to Your OneDrive Folder",
+    body: `Dear Client,
+
+You can now upload your documents to the following OneDrive folder:
+${createdFolderLink}
+
+Simply click the link above and drag & drop your documents into the folder.
+
+Best regards,
+Your Law Office`
+  },
+  hebrew: {
+    subject: "העלאת מסמכים לתיקיית OneDrive שלך",
+    body: `שלום רב,
+
+ניתן כעת להעלות את המסמכים שלך לתיקיית OneDrive הבאה:
+${createdFolderLink}
+
+יש ללחוץ על הקישור למעלה ולגרור את המסמכים לתוך התיקייה.
+
+בברכה,
+משרד עורכי הדין שלך`
+  }
+};
+
+// Show email button when folder is created
+function showEmailButton() {
+  const emailButton = document.getElementById('emailButton');
+  if (emailButton) {
+    emailButton.style.display = 'inline-block';
+  }
 }

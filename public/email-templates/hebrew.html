@@ -10,6 +10,7 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
+            direction: rtl;
         }
         .header {
             text-align: center;
@@ -23,7 +24,7 @@
         .button {
             display: inline-block;
             padding: 10px 20px;
-            background-color: #2d4a60;
+            background-color: #253847;
             color: white;
             text-decoration: none;
             border-radius: 5px;
@@ -34,28 +35,38 @@
             font-size: 0.9em;
             color: #666;
         }
+        .drop-zone {
+            border: 2px dashed #253847;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2>הזמנה לפגישה</h2>
+        <h2>בקשת העלאת מסמכים</h2>
     </div>
     <div class="content">
         <p>שלום [Recipient Name],</p>
-        <p>אנחנו שמחים להזמין אותך לפגישה עם משרד עורכי הדין דקר פקס לוי.</p>
-        <p><strong>פרטי הפגישה:</strong></p>
-        <p>נושא: [Meeting Topic]</p>
-        <p>תאריך: [Meeting Date]</p>
-        <p>שעה: [Meeting Time]</p>
-        <p>לחץ על הכפתור למטה כדי להצטרף לפגישה:</p>
+        <p>הוזמנת להעלות מסמכים לתיקיית OneDrive מאובטחת.</p>
+        <p><strong>הוראות:</strong></p>
+        <p>1. לחץ על הכפתור למטה כדי לגשת לתיקייה האישית שלך</p>
+        <p>2. גרור ושחרר את המסמכים שלך לתוך התיקייה</p>
+        <p>3. המסמכים שלך יועלו אוטומטית</p>
         <p style="text-align: center;">
-            <a href="[Meeting Link]" class="button">הצטרף לפגישה</a>
+            <a href="[Folder Link]" class="button">גישה לתיקייה שלך</a>
         </p>
+        <div class="drop-zone">
+            <p>גרור ושחרר את המסמכים שלך לכאן</p>
+            <p><small>או לחץ כדי לבחור קבצים</small></p>
+        </div>
         <p>אם יש לך שאלות או שאתה זקוק לעזרה, אנא אל תהסס ליצור איתנו קשר.</p>
         <p>בברכה,<br>משרד עורכי הדין דקר פקס לוי</p>
     </div>
     <div class="footer">
-        <p>זהו הודעה אוטומטית. אנא אל תשיב למייל זה.</p>
+        <p>זהו הודעה אוטומטית. אנא אל תשיב להודעה זו.</p>
     </div>
 </body>
 </html> 
