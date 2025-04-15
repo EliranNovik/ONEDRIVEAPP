@@ -1891,7 +1891,7 @@ input:checked + .toggle-slider:before {
   font-size: 1.1em;
   margin-bottom: 10px;
   padding: 10px 20px;
-  background: #d4d5d7;
+  background: #d4d5d7e1;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   display: block;
@@ -1902,7 +1902,7 @@ input:checked + .toggle-slider:before {
 
 .welcome-message #userName {
   font-weight: bold;
-  color: #f7f7f7;
+  color: #373d61;
   margin-left: 5px;
 }
 
