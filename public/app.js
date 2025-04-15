@@ -110,6 +110,10 @@ async function handleRedirectPromise() {
       currentAccount = account;
       msalInstance.setActiveAccount(currentAccount);
       updateWelcomeMessage(account.name);
+      Toast.fire({
+        icon: 'success',
+        title: `Welcome, ${account.name}!`
+      });
       document.getElementById('signin-button').style.display = 'none';
       document.getElementById('signout-button').style.display = 'inline-block';
       
@@ -147,12 +151,21 @@ document.getElementById('signin-button').onclick = function () {
         currentAccount = loginResponse.account; // Store the account
         msalInstance.setActiveAccount(currentAccount);
         console.log("Login successful:", loginResponse);
+        
+        // Immediately update UI with welcome message and toast
+        updateWelcomeMessage(currentAccount.name);
+        Toast.fire({
+          icon: 'success',
+          title: `Welcome, ${currentAccount.name}!`
+        });
+        document.getElementById('signin-button').style.display = 'none';
+        document.getElementById('signout-button').style.display = 'inline-block';
+        
+        // Acquire token silently and save token to the session
         msalInstance.acquireTokenSilent({ scopes: graphScopes, account: currentAccount })
           .then(tokenResponse => {
             accessToken = tokenResponse.accessToken;
             console.log("Access token acquired:", accessToken);
-            document.getElementById('signin-button').style.display = 'none';
-            document.getElementById('signout-button').style.display = 'inline-block';
             // Save the token to the server session
             fetch('/set-token', {
               method: 'POST',
