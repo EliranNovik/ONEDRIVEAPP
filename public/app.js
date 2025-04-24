@@ -103,19 +103,10 @@ function updateWelcomeMessage(userName) {
       userNameElement.style.display = 'inline-block';
     }
     if (welcomeTextElement) welcomeTextElement.style.display = 'none';
-    // Only show toast if this is a new sign-in (not page refresh)
-    if (sessionStorage.getItem('lastSignIn') !== userName) {
-      Toast.fire({
-        icon: 'success',
-        title: `Welcome, ${userName}!`
-      });
-      sessionStorage.setItem('lastSignIn', userName);
-    }
   } else {
     if (welcomeMessage) welcomeMessage.classList.remove('signed-in');
     if (userNameElement) userNameElement.style.display = 'none';
     if (welcomeTextElement) welcomeTextElement.style.display = 'inline-block';
-    sessionStorage.removeItem('lastSignIn');
   }
 }
 
