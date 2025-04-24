@@ -29,8 +29,7 @@ const msalConfig = {
   auth: {
     clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",  
     authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
-    // Use the environment variable for redirectUri (set via window.REDIRECT_URI in your HTML)
-    redirectUri: window.REDIRECT_URI || 'https://onedriveapp.onrender.com'
+    redirectUri: "https://onedriveapp.onrender.com"
   }
 };
 
@@ -42,7 +41,11 @@ const graphScopes = [
   "OnlineMeetings.ReadWrite",
   "Calendars.ReadWrite",
   "User.Read",
-  "Mail.Send"
+  "Mail.Send",
+  "Chat.ReadWrite",  // For reading and writing chat messages
+  "Chat.Create",     // For creating new chats
+  "Chat.ReadBasic",   // For basic chat functionality
+  "Contacts.Read"    // Added for contact access
 ];
 
 /* ---------------- Utility: Detect Mobile Device ---------------- */
@@ -159,7 +162,6 @@ document.getElementById('signin-button').onclick = function () {
           title: `Welcome, ${currentAccount.name}!`
         });
         document.getElementById('signin-button').style.display = 'none';
-        document.getElementById('signout-button').style.display = 'inline-block';
         
         // Acquire token silently and save token to the session
         msalInstance.acquireTokenSilent({ scopes: graphScopes, account: currentAccount })
@@ -200,11 +202,6 @@ document.getElementById('signin-button').onclick = function () {
   }
 };
 
-// Sign out function now redirects to OneDrive instead of logging out
-document.getElementById('signout-button').onclick = function () {
-  window.open("https://lawdecker-my.sharepoint.com", "_blank");
-};
-
 /* ---------------- File Selection & Drag-Drop ---------------- */
 
 // Initialize drop zone elements
@@ -219,9 +216,9 @@ document.addEventListener('DOMContentLoaded', function() {
     dropZone.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation(); // Prevent event bubbling
-      fileInput.click();
-    });
-    
+    fileInput.click();
+  });
+  
     // Handle file selection via input
     fileInput.addEventListener('change', function() {
       // Visual feedback when files are selected
@@ -233,29 +230,29 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         dropZone.classList.remove('files-selected');
         filesToUpload = [];
-        updateFileList();
-      }
-    });
-    
-    // Drag-and-drop events
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('hover');
-    });
+      updateFileList();
+    }
+  });
 
-    dropZone.addEventListener('dragleave', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('hover');
-    });
+// Drag-and-drop events
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('hover');
+});
 
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('hover');
-      const files = Array.from(e.dataTransfer.files);
-      if (files.length > 0) {
+dropZone.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('hover');
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('hover');
+  const files = Array.from(e.dataTransfer.files);
+  if (files.length > 0) {
         dropZone.classList.add('files-selected');
-        filesToUpload = files;
-        updateFileList();
+    filesToUpload = files;
+    updateFileList();
       }
     });
     
@@ -454,16 +451,16 @@ document.getElementById('upload-button').onclick = async function () {
   
   try {
     const folderResponse = await fetch(createFolderEndpoint, {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + accessToken,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: folderName,
-        folder: {},
-        "@microsoft.graph.conflictBehavior": "rename"
-      })
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + accessToken,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name: folderName,
+      folder: {},
+      "@microsoft.graph.conflictBehavior": "rename"
+    })
     });
     
     // Check if the response indicates an expired token
@@ -525,7 +522,7 @@ document.getElementById('upload-button').onclick = async function () {
     }
     
     const linkData = await linkResponse.json();
-    console.log("Sharing link created:", linkData);
+      console.log("Sharing link created:", linkData);
     
     // Check if linkData.link exists before accessing webUrl
     if (linkData && linkData.link && linkData.link.webUrl) {
@@ -560,7 +557,7 @@ document.getElementById('upload-button').onclick = async function () {
         });
       }
     }
-    
+
     // Upload each file into the newly created folder
     for (const file of filesToUpload) {
       const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${folderData.id}:/${encodeURIComponent(file.name)}:/content`;
@@ -714,6 +711,122 @@ if (meetingForm) {
         icon: 'error',
         title: 'Error creating meeting'
       });
+    }
+  });
+}
+
+/* ---------------- OneDrive Search Functionality ---------------- */
+
+// Search input and results elements
+const searchInput = document.getElementById('searchInput');
+const searchButton = document.getElementById('searchButton');
+const searchResults = document.getElementById('searchResults');
+
+// Debounce function to limit API calls
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Search OneDrive
+async function searchOneDrive(query) {
+  if (!query.trim() || !accessToken) return;
+
+  try {
+    const response = await fetch(
+      `https://graph.microsoft.com/v1.0/me/drive/root/search(q='${encodeURIComponent(query)}')`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Token might be expired, try to refresh
+        const refreshed = await refreshTokenIfNeeded();
+        if (refreshed) {
+          return searchOneDrive(query);
+        }
+      }
+      throw new Error('Search failed');
+    }
+
+    const data = await response.json();
+    displaySearchResults(data.value);
+  } catch (error) {
+    console.error('Search error:', error);
+    Toast.fire({
+      icon: 'error',
+      title: 'Error searching OneDrive'
+    });
+  }
+}
+
+// Display search results
+function displaySearchResults(results) {
+  if (!results || results.length === 0) {
+    searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
+    searchResults.style.display = 'block';
+    return;
+  }
+
+  const resultsHTML = results.map(item => `
+    <div class="search-result-item" data-url="${item.webUrl}">
+      <i class="fas ${item.folder ? 'fa-folder' : 'fa-file'}"></i>
+      <div class="item-name">${item.name}</div>
+      <div class="item-path">${item.parentReference?.path || ''}</div>
+    </div>
+  `).join('');
+
+  searchResults.innerHTML = resultsHTML;
+  searchResults.style.display = 'block';
+
+  // Add click handlers to results
+  document.querySelectorAll('.search-result-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const url = item.getAttribute('data-url');
+      if (url) {
+        window.open(url, '_blank');
+        searchResults.style.display = 'none';
+      }
+    });
+  });
+}
+
+// Event listeners for search
+if (searchInput && searchButton) {
+  // Debounced search on input
+  searchInput.addEventListener('input', debounce((e) => {
+    searchOneDrive(e.target.value);
+  }, 300));
+
+  // Search on button click
+  searchButton.addEventListener('click', () => {
+    searchOneDrive(searchInput.value);
+  });
+
+  // Hide results when clicking outside
+  document.addEventListener('click', (e) => {
+    const searchContainer = document.querySelector('.search-container');
+    if (!searchContainer.contains(e.target)) {
+      searchResults.style.display = 'none';
+    }
+  });
+
+  // Show results when focusing input
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim()) {
+      searchOneDrive(searchInput.value);
     }
   });
 }

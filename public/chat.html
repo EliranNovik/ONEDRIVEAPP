@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Microsoft Teams Chat</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js"></script>
+  <script>
+    // Add error handling for script loading
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      console.error('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo + '\nColumn: ' + columnNo + '\nError object: ' + JSON.stringify(error));
+      return false;
+    };
+
+    // MSAL configuration
+    const msalConfig = {
+      auth: {
+        clientId: 'e03ab8e9-4eb4-4bbc-8c6d-805021e089cd',
+        authority: 'https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84',
+        redirectUri: 'https://onedriveapp.onrender.com'
+      },
+      cache: {
+        cacheLocation: "sessionStorage",
+        storeAuthStateInCookie: false
+      }
+    };
+
+    const msalInstance = new msal.PublicClientApplication(msalConfig);
+    let currentChatId = null;
+
+    // Initialize MSAL and handle redirect response
+    async function initialize() {
+      try {
+        console.log('Initializing MSAL...');
+        await msalInstance.handleRedirectPromise();
+        console.log('Redirect handled successfully');
+        
+        const accounts = msalInstance.getAllAccounts();
+        console.log('Available accounts:', accounts);
+        
+        if (accounts.length === 0) {
+          console.log('No accounts found, initiating login...');
+          await msalInstance.loginRedirect({
+            scopes: ['User.Read', 'Chat.Read', 'Chat.ReadWrite', 'Contacts.Read']
+          });
+        } else {
+          console.log('Account found, loading contacts...');
+          await loadContacts();
+        }
+      } catch (error) {
+        console.error('Initialization error:', error);
+        if (error instanceof msal.InteractionRequiredAuthError) {
+          console.log('Consent required, redirecting to login...');
+          await msalInstance.loginRedirect({
+            scopes: ['User.Read', 'Chat.Read', 'Chat.ReadWrite', 'Contacts.Read']
+          });
+        }
+      }
+    }
+
+    // Load contacts from Microsoft Graph
+    async function loadContacts() {
+      try {
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length === 0) {
+          throw new Error('No accounts found. Please sign in.');
+        }
+
+        console.log('Acquiring token silently...');
+        const tokenResponse = await msalInstance.acquireTokenSilent({
+          scopes: ['User.Read', 'Chat.Read', 'Chat.ReadWrite', 'Contacts.Read'],
+          account: accounts[0]
+        });
+
+        console.log('Token acquired successfully');
+        console.log('Storing token in session...');
+        
+        const response = await fetch('/set-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ token: tokenResponse.accessToken })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to store token in session');
+        }
+
+        console.log('Fetching contacts...');
+        const contactsResponse = await fetch('/api/contacts');
+        const data = await contactsResponse.json();
+        
+        if (!contactsResponse.ok) {
+          throw new Error(data.error || 'Failed to fetch contacts');
+        }
+
+        console.log('Contacts fetched successfully:', data.contacts);
+        displayContacts(data.contacts);
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+        if (error instanceof msal.InteractionRequiredAuthError) {
+          console.log('Consent required, redirecting to login...');
+          await msalInstance.loginRedirect({
+            scopes: ['User.Read', 'Chat.Read', 'Chat.ReadWrite', 'Contacts.Read']
+          });
+        } else {
+          alert('Error loading contacts: ' + error.message);
+        }
+      }
+    }
+
+    // Display contacts in the sidebar
+    function displayContacts(contacts) {
+      const contactsList = document.getElementById('contactsList');
+      if (!contacts || contacts.length === 0) {
+        contactsList.innerHTML = '<p>No contacts found</p>';
+        return;
+      }
+
+      // Get active users
+      fetch('/api/active-users')
+        .then(response => response.json())
+        .then(activeUsers => {
+          console.log('Displaying contacts:', contacts);
+          contactsList.innerHTML = contacts.map(contact => {
+            const email = contact.mail || contact.userPrincipalName || 'No email available';
+            const displayName = contact.displayName || 'Unknown Contact';
+            const isOnline = activeUsers.includes(email);
+            const isActive = currentChatId && currentChatId.includes(email);
+            
+            return `
+              <div class="contact ${isActive ? 'active' : ''}" onclick="startChat('${email}', '${displayName}')">
+                <div class="contact-info">
+                  <span class="contact-name">${displayName}</span>
+                  <span class="contact-email">${email}</span>
+                </div>
+                ${isOnline ? '<span class="online-status" title="Online"><i class="fas fa-circle"></i></span>' : ''}
+              </div>
+            `;
+          }).join('');
+        })
+        .catch(error => {
+          console.error('Error fetching active users:', error);
+          // Display contacts without online status if there's an error
+          contactsList.innerHTML = contacts.map(contact => {
+            const email = contact.mail || contact.userPrincipalName || 'No email available';
+            const displayName = contact.displayName || 'Unknown Contact';
+            const isActive = currentChatId && currentChatId.includes(email);
+            
+            return `
+              <div class="contact ${isActive ? 'active' : ''}" onclick="startChat('${email}', '${displayName}')">
+                <div class="contact-info">
+                  <span class="contact-name">${displayName}</span>
+                  <span class="contact-email">${email}</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        });
+    }
+
+    // Start a new chat with a contact
+    async function startChat(email, displayName) {
+      console.log('Starting chat with:', email);
+      try {
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length === 0) {
+          throw new Error('No accounts found. Please sign in.');
+        }
+
+        const currentUser = accounts[0];
+        const currentUserEmail = currentUser.username;
+        console.log('Current user email:', currentUserEmail);
+
+        const token = await msalInstance.acquireTokenSilent({
+          scopes: ['Chat.ReadWrite']
+        });
+        console.log('Token acquired successfully');
+
+        // Store token in session
+        console.log('Storing token in session...');
+        const tokenResponse = await fetch('/set-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ token: token.accessToken })
+        });
+
+        if (!tokenResponse.ok) {
+          throw new Error('Failed to store token in session');
+        }
+
+        // Create chat with both current user and selected contact
+        console.log('Creating chat...');
+        const response = await fetch('/api/chats', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            members: [currentUserEmail, email] 
+          })
+        });
+
+        console.log('Chat creation response status:', response.status);
+        const responseText = await response.text();
+        console.log('Chat creation response:', responseText);
+        
+        const data = JSON.parse(responseText);
+        console.log('Parsed response data:', data);
+
+        if (!data.success) {
+          throw new Error(data.error?.message || 'Failed to create chat');
+        }
+
+        currentChatId = data.chatId;
+        // Update the chat header with display name
+        document.getElementById('currentChatName').textContent = displayName;
+        
+        // Show the chat messages container and hide the contacts list
+        const chatMessages = document.querySelector('.chat-messages');
+        const contactsList = document.querySelector('.contacts-list');
+        if (chatMessages) chatMessages.style.display = 'block';
+        if (contactsList) contactsList.style.display = 'none';
+        
+        // Update contacts list to highlight active chat
+        loadContacts();
+        loadChatMessages();
+      } catch (error) {
+        console.error('Error starting chat:', error);
+        alert('Failed to start chat: ' + (error.message || 'Unknown error'));
+      }
+    }
+
+    // Load messages for the current chat
+    async function loadChatMessages() {
+      if (!currentChatId) return;
+
+      try {
+        console.log('Loading chat messages...');
+        const response = await fetch(`/api/chats/${currentChatId}/messages`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load messages');
+        }
+
+        console.log('Messages loaded successfully:', data);
+        
+        // Check if we have messages in the response
+        if (data.value && Array.isArray(data.value)) {
+          displayMessages(data.value);
+        } else {
+          console.log('No messages found in the chat');
+          displayMessages([]);
+        }
+      } catch (error) {
+        console.error('Error loading messages:', error);
+        alert('Error loading messages: ' + error.message);
+      }
+    }
+
+    // Display messages in the chat window
+    function displayMessages(messages) {
+      const chatMessages = document.getElementById('chatMessages');
+      if (!chatMessages) {
+        console.error('Chat messages container not found');
+        return;
+      }
+
+      // Clear existing messages
+      chatMessages.innerHTML = '';
+
+      // If no messages, show a placeholder
+      if (!messages || messages.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'message empty-state';
+        emptyState.innerHTML = `
+          <i class="fas fa-comments"></i>
+          <span>No messages yet. Start the conversation!</span>
+        `;
+        chatMessages.appendChild(emptyState);
+        return;
+      }
+
+      // Get current user's email
+      const accounts = msalInstance.getAllAccounts();
+      const currentUserEmail = accounts[0]?.username;
+
+      // Display each message
+      messages.forEach(message => {
+        const messageDiv = document.createElement('div');
+        const isSent = message.from?.user?.id === currentUserEmail;
+        messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        // Remove any HTML tags from the message content
+        const cleanContent = (message.body?.content || message.content || '').replace(/<[^>]*>/g, '');
+        contentDiv.textContent = cleanContent;
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        const messageDate = new Date(message.createdDateTime);
+        timeDiv.textContent = messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        messageDiv.appendChild(contentDiv);
+        messageDiv.appendChild(timeDiv);
+        chatMessages.appendChild(messageDiv);
+      });
+
+      // Scroll to the bottom
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Send a new message
+    async function sendMessage() {
+      if (!currentChatId) {
+        alert('Please start a chat first');
+        return;
+      }
+
+      const messageInput = document.getElementById('messageInput');
+      const content = messageInput.value.trim();
+      if (!content) return;
+
+      try {
+        console.log('Sending message...');
+        const response = await fetch(`/api/chats/${currentChatId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ content })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to send message');
+        }
+
+        console.log('Message sent successfully');
+        messageInput.value = '';
+        loadChatMessages();
+      } catch (error) {
+        console.error('Error sending message:', error);
+        alert('Error sending message: ' + error.message);
+      }
+    }
+
+    // Add DOMContentLoaded event listener
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM fully loaded and parsed');
+      initialize();
+      
+      // Add event listener for contact search only if the element exists
+      const contactSearch = document.getElementById('contactSearch');
+      if (contactSearch) {
+        contactSearch.addEventListener('input', async (e) => {
+          const searchTerm = e.target.value.toLowerCase();
+          const contacts = await fetch('/api/contacts').then(res => res.json());
+          
+          if (contacts.success) {
+            const filteredContacts = contacts.contacts.filter(contact => 
+              contact.displayName.toLowerCase().includes(searchTerm) ||
+              (contact.mail || contact.userPrincipalName || '').toLowerCase().includes(searchTerm)
+            );
+            
+            const searchResults = document.getElementById('searchResults');
+            if (searchResults) {
+              searchResults.innerHTML = '';
+              
+              filteredContacts.forEach(contact => {
+                const contactItem = document.createElement('div');
+                contactItem.className = 'contact-item';
+                contactItem.innerHTML = `
+                  <div class="contact-info">
+                    <span class="contact-name">${contact.displayName}</span>
+                    <span class="contact-email">${contact.mail || contact.userPrincipalName || 'No email'}</span>
+                  </div>
+                `;
+                
+                contactItem.onclick = () => {
+                  startChat(contact.mail || contact.userPrincipalName || '', contact.displayName || '');
+                  closeNewChatModal();
+                };
+                
+                searchResults.appendChild(contactItem);
+              });
+            }
+          }
+        });
+      }
+    });
+
+    // Show new chat modal
+    function showNewChatModal() {
+      document.getElementById('newChatModal').style.display = 'block';
+    }
+
+    // Close new chat modal
+    function closeNewChatModal() {
+      document.getElementById('newChatModal').style.display = 'none';
+    }
+
+    // Show contacts list and hide chat
+    function showContactsList() {
+      const chatMessages = document.querySelector('.chat-messages');
+      const contactsList = document.querySelector('.contacts-list');
+      if (chatMessages) chatMessages.style.display = 'none';
+      if (contactsList) contactsList.style.display = 'block';
+      currentChatId = null;
+      document.getElementById('currentChatName').textContent = 'Select a chat';
+    }
+  </script>
+  <style>
+    .chat-container {
+      display: flex;
+      height: calc(100vh - 80px);
+      margin: 20px;
+      margin-top: 160px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 1;
+    }
+
+    .contacts-list {
+      width: 300px;
+      background: #f0f2f5;
+      border-right: 1px solid #ddd;
+      padding: 20px;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #f0f2f5;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #ddd;
+      background: #f0f2f5;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .chat-input {
+      padding: 15px 20px;
+      border-top: 1px solid #ddd;
+      background: #f0f2f5;
+      height: 150px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .contact {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      cursor: pointer;
+      background: white;
+      border: 1px solid #ddd;
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .contact.active {
+      background: #e9ecef;
+      border-left: 4px solid #25D366;
+    }
+
+    .contact:hover {
+      background-color: #f5f5f5;
+    }
+
+    .contact-info {
+      flex: 1;
+    }
+
+    .contact-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 3px;
+    }
+
+    .contact-email {
+      color: #666;
+      font-size: 0.85em;
+    }
+
+    .message {
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      max-width: 70%;
+      position: relative;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      word-wrap: break-word;
+      align-self: flex-start;
+    }
+
+    .message.sent {
+      background: #DCF8C6;
+      color: #000;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+      align-self: flex-end;
+    }
+
+    .message.received {
+      background: #FFFFFF;
+      color: #000;
+      border-bottom-left-radius: 0;
+      border: 1px solid #e9ecef;
+      margin-right: auto;
+      align-self: flex-start;
+    }
+
+    .message-content {
+      margin-bottom: 5px;
+      white-space: pre-wrap;
+    }
+
+    .message-time {
+      font-size: 0.75em;
+      color: #666;
+      text-align: right;
+      margin-top: 5px;
+    }
+
+    .back-button {
+      background: none;
+      border: none;
+      color: #0078d4;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 1em;
+    }
+
+    .back-button:hover {
+      background: #e9ecef;
+    }
+
+    .back-button i {
+      font-size: 1.2em;
+    }
+
+    .new-chat-button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+
+    .new-chat-button:hover {
+      background: #128C7E;
+    }
+
+    .chat-input textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      resize: none;
+      height: 100px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+    }
+
+    .chat-input textarea:focus {
+      outline: none;
+      border-color: #25D366;
+    }
+
+    .chat-input button {
+      align-self: flex-end;
+      padding: 10px 20px;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+
+    .chat-input button:hover {
+      background: #128C7E;
+    }
+
+    /* New Chat Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      width: 90%;
+      max-width: 500px;
+      margin: 50px auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      position: relative;
+    }
+
+    .modal .close {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .modal .close:hover {
+      color: #333;
+    }
+
+    .search-contacts {
+      margin: 20px 0;
+      position: relative;
+    }
+
+    .search-contacts input {
+      width: 100%;
+      padding: 12px 15px;
+      padding-left: 40px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1em;
+      transition: all 0.3s ease;
+    }
+
+    .search-contacts input:focus {
+      outline: none;
+      border-color: #0078d4;
+      box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+    }
+
+    .search-contacts i {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+    }
+
+    .search-results {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+
+    .contact-item {
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .contact-item:hover {
+      background-color: #f5f5f5;
+    }
+
+    .contact-item:last-child {
+      border-bottom: none;
+    }
+
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .contact-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .contact-email {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .message.empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+      color: #666;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin: 20px;
+    }
+
+    .message.empty-state i {
+      font-size: 2.5em;
+      color: #0078d4;
+      margin-bottom: 15px;
+    }
+
+    .message.empty-state span {
+      font-size: 1.1em;
+      color: #333;
+    }
+
+    .header2 {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .chat-header h2 {
+      color: #111b21;
+      margin: 0;
+      flex: 1;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <header class="header2">
+    <div class="header-content">
+      <img src="DPLOGO.png" alt="Logo" class="logo">
+      <nav class="main-nav">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
+          <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
+          <li><a href="/teams">Create a Meeting</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="chat-container">
+    <div class="contacts-list">
+      <button class="new-chat-button" onclick="showNewChatModal()">
+        <i class="fas fa-plus"></i> New Chat
+      </button>
+      <div id="contactsList"></div>
+    </div>
+    <div class="chat-main">
+      <div class="chat-header">
+        <button class="back-button" onclick="showContactsList()">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <h2 id="currentChatName">Select a chat</h2>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <!-- Messages will be populated here -->
+      </div>
+      <div class="chat-input">
+        <textarea id="messageInput" placeholder="Type a message..."></textarea>
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Chat Modal -->
+  <div id="newChatModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeNewChatModal()">&times;</span>
+      <h2>Start New Chat</h2>
+      <div class="search-contacts">
+        <i class="fas fa-search"></i>
+        <input type="text" id="contactSearch" placeholder="Search contacts by name or email...">
+      </div>
+      <div id="searchResults" class="search-results"></div>
+    </div>
+  </div>
+</body>
+</html> 

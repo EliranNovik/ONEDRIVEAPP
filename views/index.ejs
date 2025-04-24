@@ -109,10 +109,10 @@
 
       <!-- Template Selection Modal -->
       <div id="templateModal" class="modal" style="display: none;">
-        <div class="modal-content">
+        <div class="modal-content template-modal">
           <span class="close">&times;</span>
           <h2>Select Email Template</h2>
-          <div class="template-options">
+          <div class="template-options-container">
             <div class="template-option" data-template="english">
               <h3>English Template</h3>
               <p>Professional English meeting invitation</p>
@@ -193,6 +193,10 @@
     
     // Date and Time Picker Implementation
     document.addEventListener("DOMContentLoaded", function() {
+      // Check if we're on the meeting creation page
+      const meetingForm = document.getElementById("meetingForm");
+      if (!meetingForm) return; // Exit if not on meeting page
+
       // Elements
       const datetimeTrigger = document.getElementById("datetime-trigger");
       const datetimeDropdown = document.getElementById("datetime-dropdown");
@@ -211,6 +215,15 @@
       const applyBtn = document.getElementById("apply-datetime");
       const dateTimeInput = document.getElementById("dateTime");
       const quickDateOptions = document.querySelectorAll(".quick-date-option");
+      
+      // Check if all required elements exist
+      if (!datetimeTrigger || !datetimeDropdown || !selectedDatetime || !currentMonth || 
+          !prevMonthBtn || !nextMonthBtn || !calendar || !hourInput || !minuteInput || 
+          !decreaseHourBtn || !increaseHourBtn || !decreaseMinuteBtn || !increaseMinuteBtn || 
+          !cancelBtn || !applyBtn || !dateTimeInput) {
+        console.error("Required calendar elements are missing");
+        return;
+      }
       
       // Initialize variables
       let currentDate = new Date();
@@ -420,13 +433,13 @@
           toast.addEventListener('mouseenter', Swal.stopTimer);
           toast.addEventListener('mouseleave', Swal.resumeTimer);
         }
-      });
-
-      // Handle meeting form submission
-      document.getElementById("meetingForm")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const topic = document.getElementById("topic").value;
-        const dateTime = document.getElementById("dateTime").value;
+    });
+    
+    // Handle meeting form submission
+    document.getElementById("meetingForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const topic = document.getElementById("topic").value;
+      const dateTime = document.getElementById("dateTime").value;
         
         if (!dateTime) {
           Toast.fire({
@@ -435,20 +448,20 @@
           });
           return;
         }
-        
-        try {
-          const response = await fetch("/teams/create-meeting", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ topic, dateTime })
-          });
-          const data = await response.json();
-          if (data.success) {
-            const joinLink = document.getElementById("joinLink");
-            joinLink.href = data.meetingLink;
-            document.getElementById("meetingLinkContainer").style.display = "block";
-            document.getElementById("copyButton").onclick = function() {
-              navigator.clipboard.writeText(data.meetingLink)
+      
+      try {
+        const response = await fetch("/teams/create-meeting", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, dateTime })
+        });
+        const data = await response.json();
+        if (data.success) {
+          const joinLink = document.getElementById("joinLink");
+          joinLink.href = data.meetingLink;
+          document.getElementById("meetingLinkContainer").style.display = "block";
+          document.getElementById("copyButton").onclick = function() {
+            navigator.clipboard.writeText(data.meetingLink)
                 .then(() => {
                   Toast.fire({
                     icon: 'success',
@@ -466,8 +479,8 @@
             // Add email button functionality
             document.getElementById("emailButton").onclick = function() {
               document.getElementById("templateModal").style.display = "block";
-            };
-          } else {
+          };
+        } else {
             Toast.fire({
               icon: 'error',
               title: 'Error creating meeting'
@@ -538,9 +551,13 @@
         const meetingTime = new Date(dateTime).toLocaleTimeString();
 
         try {
+          console.log('Sending email request...');
           const response = await fetch("/teams/send-email", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
             body: JSON.stringify({
               recipientEmail,
               recipientName,
@@ -552,7 +569,18 @@
             })
           });
 
-          const data = await response.json();
+          console.log('Response status:', response.status);
+          const responseText = await response.text();
+          console.log('Raw response:', responseText);
+
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('Failed to parse response as JSON:', parseError);
+            throw new Error('Server returned invalid JSON response');
+          }
+
           if (data.success) {
             Toast.fire({
               icon: 'success',
@@ -570,12 +598,114 @@
           console.error("Error:", err);
           Toast.fire({
             icon: 'error',
-            title: 'Error sending email'
+            title: 'Error sending email: ' + (err.message || 'Unknown error')
           });
         }
       };
     });
   </script>
+
+  <style>
+    /* Template Modal Styles */
+    .template-modal {
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .template-options-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .template-option {
+      flex: 1;
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid #ddd;
+    }
+
+    .template-option:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .template-option h3 {
+      color: #253847;
+      margin-bottom: 10px;
+    }
+
+    .template-option p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .template-option .select-template {
+      background-color: #253847;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .template-option .select-template:hover {
+      background-color: #1a2a35;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      overflow: auto;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      border-radius: 8px;
+      position: relative;
+    }
+
+    .close {
+      position: absolute;
+      right: 20px;
+      top: 10px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .close:hover {
+      color: #000;
+    }
+
+    @media (max-width: 768px) {
+      .template-options-container {
+        flex-direction: column;
+      }
+      
+      .template-modal {
+        width: 95%;
+        margin: 10% auto;
+      }
+    }
+  </style>
 </body>
 </html>
 

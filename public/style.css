@@ -1044,7 +1044,7 @@ button:hover {
   .main-nav a {
     display: block;
     width: 100%;
-    text-align: center;
+  text-align: center;
     font-size: 1.1em;
     padding: 10px 15px;
     margin: 5px 0;
