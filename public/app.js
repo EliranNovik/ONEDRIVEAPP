@@ -95,47 +95,27 @@ function updateWelcomeMessage(userName) {
   const welcomeMessage = document.querySelector('.welcome-message');
   const userNameElement = document.getElementById('userName');
   const welcomeTextElement = document.getElementById('welcomeText');
-  const signinButton = document.getElementById('signin-button');
-  const signoutButton = document.getElementById('signout-button');
-
-  if (welcomeMessage && userNameElement && welcomeTextElement && signinButton) {
-    if (userName) {
-      welcomeMessage.classList.add('signed-in');
+  
+  if (userName) {
+    if (welcomeMessage) welcomeMessage.classList.add('signed-in');
+    if (userNameElement) {
       userNameElement.textContent = userName;
-      welcomeTextElement.style.display = 'none';
       userNameElement.style.display = 'inline-block';
-      signinButton.style.display = 'none';
-      
-      // Create signout button if it doesn't exist
-      if (!signoutButton) {
-        const newSignoutButton = document.createElement('button');
-        newSignoutButton.id = 'signout-button';
-        newSignoutButton.textContent = 'Sign Out';
-        newSignoutButton.onclick = signOut;
-        document.querySelector('.auth-buttons').appendChild(newSignoutButton);
-      }
-      
-      // Only show toast if this is a new sign-in (not page refresh)
-      if (sessionStorage.getItem('lastSignIn') !== userName) {
-        Toast.fire({
-          icon: 'success',
-          title: `Welcome, ${userName}!`
-        });
-        sessionStorage.setItem('lastSignIn', userName);
-      }
-    } else {
-      welcomeMessage.classList.remove('signed-in');
-      welcomeTextElement.style.display = 'inline-block';
-      userNameElement.style.display = 'none';
-      signinButton.style.display = 'block';
-      
-      // Remove signout button if it exists
-      if (signoutButton) {
-        signoutButton.remove();
-      }
-      
-      sessionStorage.removeItem('lastSignIn');
     }
+    if (welcomeTextElement) welcomeTextElement.style.display = 'none';
+    // Only show toast if this is a new sign-in (not page refresh)
+    if (sessionStorage.getItem('lastSignIn') !== userName) {
+      Toast.fire({
+        icon: 'success',
+        title: `Welcome, ${userName}!`
+      });
+      sessionStorage.setItem('lastSignIn', userName);
+    }
+  } else {
+    if (welcomeMessage) welcomeMessage.classList.remove('signed-in');
+    if (userNameElement) userNameElement.style.display = 'none';
+    if (welcomeTextElement) welcomeTextElement.style.display = 'inline-block';
+    sessionStorage.removeItem('lastSignIn');
   }
 }
 
