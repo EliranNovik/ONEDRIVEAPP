@@ -43,7 +43,15 @@
         if (accounts.length === 0) {
           console.log('No accounts found, initiating login...');
           await msalInstance.loginRedirect({
-            scopes: ['User.Read', 'Chat.Read', 'Chat.ReadWrite', 'Contacts.Read']
+            scopes: [
+              'User.Read',
+              'User.ReadBasic.All',
+              'People.Read',
+              'Contacts.Read',
+              'Chat.Read',
+              'Chat.ReadWrite',
+              'Chat.Create'
+            ]
           });
         } else {
           console.log('Account found, loading contacts...');
@@ -54,7 +62,15 @@
         if (error instanceof msal.InteractionRequiredAuthError) {
           console.log('Consent required, redirecting to login...');
           await msalInstance.loginRedirect({
-            scopes: ['User.Read', 'Chat.Read', 'Chat.ReadWrite', 'Contacts.Read']
+            scopes: [
+              'User.Read',
+              'User.ReadBasic.All',
+              'People.Read',
+              'Contacts.Read',
+              'Chat.Read',
+              'Chat.ReadWrite',
+              'Chat.Create'
+            ]
           });
         }
       }

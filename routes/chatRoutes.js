@@ -127,12 +127,14 @@ router.get('/chats/:chatId/messages', checkAuth, async (req, res) => {
 // Get Contacts Route
 router.get('/contacts', checkAuth, async (req, res) => {
   try {
-    console.log('Fetching users with token:', req.session.accessToken ? 'Token present' : 'No token');
+    console.log('Fetching contacts for user:', req.session.user?.username);
+    console.log('Token present:', !!req.session.accessToken);
     
     let allContacts = [];
-    let nextLink = 'https://graph.microsoft.com/v1.0/users?$top=999'; // Increased page size to 999
+    let nextLink = 'https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,userPrincipalName,jobTitle,companyName&$top=999';
 
     while (nextLink) {
+      console.log('Fetching contacts from:', nextLink);
       const response = await axios.get(nextLink, {
         headers: {
           Authorization: `Bearer ${req.session.accessToken}`,
@@ -144,12 +146,14 @@ router.get('/contacts', checkAuth, async (req, res) => {
         console.error('Unexpected response format:', response.data);
         return res.status(500).json({ 
           success: false, 
-          error: 'Unexpected response format from Microsoft Graph API' 
+          error: 'Unexpected response format from Microsoft Graph API',
+          details: response.data
         });
       }
 
       // Add the current page of contacts to our collection
       allContacts = allContacts.concat(response.data.value);
+      console.log(`Fetched ${response.data.value.length} contacts in this batch`);
 
       // Check if there's a next page
       nextLink = response.data['@odata.nextLink'];
@@ -165,17 +169,28 @@ router.get('/contacts', checkAuth, async (req, res) => {
       companyName: user.companyName || ''
     }));
 
-    console.log('Formatted users:', contacts);
+    // Filter out the current user from the contacts list
+    const currentUserEmail = req.session.user?.username;
+    const filteredContacts = contacts.filter(contact => contact.mail !== currentUserEmail);
+
+    console.log('Returning filtered contacts:', filteredContacts.length);
 
     res.json({ 
       success: true, 
-      contacts 
+      contacts: filteredContacts 
     });
   } catch (error) {
-    console.error('Error fetching users:', error.response ? error.response.data : error.message);
+    console.error('Error fetching contacts:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      statusText: error.response?.statusText
+    });
+    
     res.status(500).json({ 
       success: false, 
-      error: error.response ? error.response.data : error.message 
+      error: 'Failed to fetch contacts',
+      details: error.response?.data || error.message
     });
   }
 });
