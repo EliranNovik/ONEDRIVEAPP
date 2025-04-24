@@ -61,8 +61,10 @@ document.addEventListener("DOMContentLoaded", function() {
     currentAccount = accounts[0];
     msalInstance.setActiveAccount(currentAccount);
     updateWelcomeMessage(currentAccount.name);
-    document.getElementById('signin-button').style.display = 'none';
-    document.getElementById('signout-button').style.display = 'inline-block';
+    const signinButton = document.getElementById('signin-button');
+    const signoutButton = document.getElementById('signout-button');
+    if (signinButton) signinButton.style.display = 'none';
+    if (signoutButton) signoutButton.style.display = 'inline-block';
   }
 
   // Then check server session
@@ -91,15 +93,20 @@ function extractUsername(email) {
 // Function to update welcome message
 function updateWelcomeMessage(userName) {
   const welcomeMessage = document.querySelector('.welcome-message');
+  const userNameElement = document.getElementById('userName');
+  const welcomeTextElement = document.getElementById('welcomeText');
+  
   if (userName) {
-    welcomeMessage.classList.add('signed-in');
-    document.getElementById('userName').textContent = userName;
-    document.getElementById('welcomeText').style.display = 'none';
-    document.getElementById('userName').style.display = 'inline-block';
+    if (welcomeMessage) welcomeMessage.classList.add('signed-in');
+    if (userNameElement) {
+      userNameElement.textContent = userName;
+      userNameElement.style.display = 'inline-block';
+    }
+    if (welcomeTextElement) welcomeTextElement.style.display = 'none';
   } else {
-    welcomeMessage.classList.remove('signed-in');
-    document.getElementById('welcomeText').style.display = 'inline-block';
-    document.getElementById('userName').style.display = 'none';
+    if (welcomeMessage) welcomeMessage.classList.remove('signed-in');
+    if (userNameElement) userNameElement.style.display = 'none';
+    if (welcomeTextElement) welcomeTextElement.style.display = 'inline-block';
   }
 }
 
@@ -804,7 +811,7 @@ function displaySearchResults(results) {
 }
 
 // Event listeners for search
-if (searchInput && searchButton) {
+if (searchInput && searchButton && searchResults) {
   // Debounced search on input
   searchInput.addEventListener('input', debounce((e) => {
     searchOneDrive(e.target.value);
@@ -812,13 +819,15 @@ if (searchInput && searchButton) {
 
   // Search on button click
   searchButton.addEventListener('click', () => {
-    searchOneDrive(searchInput.value);
+    if (searchInput.value.trim()) {
+      searchOneDrive(searchInput.value);
+    }
   });
 
   // Hide results when clicking outside
   document.addEventListener('click', (e) => {
     const searchContainer = document.querySelector('.search-container');
-    if (!searchContainer.contains(e.target)) {
+    if (searchContainer && !searchContainer.contains(e.target)) {
       searchResults.style.display = 'none';
     }
   });
