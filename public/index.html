@@ -158,8 +158,77 @@
       background: rgba(255, 255, 255, 0.2);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      z-index: 100;
+      z-index: 1000;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      height: 40px;
+      width: auto;
+      margin-right: 20px;
+      z-index: 1001;
+    }
+
+    .main-nav {
+      margin-left: auto;
+    }
+
+    .main-nav ul {
+      display: flex;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .main-nav li {
+      margin-left: 20px;
+    }
+
+    .main-nav a {
+      color: #253847;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .welcome-message {
+      margin-right: 20px;
+      color: #253847;
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    #signin-button, #signout-button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background-color: #253847;
+      color: white;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    #signin-button:hover, #signout-button:hover {
+      background-color: #1a2a35;
     }
 
     .content-container {
