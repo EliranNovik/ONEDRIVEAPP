@@ -14,14 +14,10 @@ const msalConfig = {
     clientId: 'e03ab8e9-4eb4-4bbc-8c6d-805021e089cd',
     authority: 'https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84',
     redirectUri: 'https://onedriveapp.onrender.com'
-  },
-  cache: {
-    cacheLocation: "sessionStorage",
-    storeAuthStateInCookie: false
   }
 };
 
-const cca = new msal.ConfidentialClientApplication(msalConfig);
+const pca = new msal.PublicClientApplication(msalConfig);
 
 // Updated Middleware to check if the user is logged in (session based)
 const checkAuth = (req, res, next) => {
@@ -39,7 +35,7 @@ router.get("/", (req, res) => {
 // Login Route for Meeting Creator
 router.get("/login", async (req, res) => {
   try {
-    const authUrl = await cca.getAuthCodeUrl({
+    const authUrl = await pca.getAuthCodeUrl({
       scopes: ["User.Read", "OnlineMeetings.ReadWrite", "Calendars.ReadWrite"],
       redirectUri: "http://localhost:3000/onedriveapp"
     });
@@ -55,7 +51,7 @@ router.get('/auth/callback', async (req, res) => {
   try {
     console.log('Starting authentication callback...');
     
-    const tokenResponse = await cca.acquireTokenByCode({
+    const tokenResponse = await pca.acquireTokenByCode({
       code: req.query.code,
       scopes: ['User.Read', 'Chat.Create', 'Chat.ReadWrite', 'OnlineMeetings.ReadWrite', 'TeamsActivity.Send'],
       redirectUri: process.env.REDIRECT_URI
