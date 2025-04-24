@@ -13,7 +13,7 @@ const msalConfig = {
   auth: {
     clientId: 'e03ab8e9-4eb4-4bbc-8c6d-805021e089cd',
     authority: 'https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84',
-    redirectUri: 'https://onedriveapp.onrender.com'
+    redirectUri: 'http://localhost:3000/teams/auth/callback'
   }
 };
 

@@ -27,7 +27,7 @@ router.get('/chats', checkAuth, async (req, res) => {
 
 // Create a new chat
 router.post('/chats', checkAuth, async (req, res) => {
-  const { members } = req.body;
+  const { members, chatType } = req.body;
   console.log('Received chat creation request with members:', members);
   
   if (!members || !Array.isArray(members)) {
@@ -39,14 +39,14 @@ router.post('/chats', checkAuth, async (req, res) => {
     console.log('Creating chat with members:', members);
     console.log('Using token from session:', req.session.accessToken ? 'Token present' : 'No token');
     
-    const response = await axios.post('https://graph.microsoft.com/v1.0/chats', {
-      chatType: 'oneOnOne',
-      members: members.map(email => ({
-        '@odata.type': '#microsoft.graph.aadUserConversationMember',
-        roles: ['owner'],
-        'user@odata.bind': `https://graph.microsoft.com/v1.0/users/${email}`
-      }))
-    }, {
+    // Log the full request payload
+    const requestPayload = {
+      chatType: chatType || 'oneOnOne',
+      members: members
+    };
+    console.log('Request payload:', JSON.stringify(requestPayload, null, 2));
+    
+    const response = await axios.post('https://graph.microsoft.com/v1.0/chats', requestPayload, {
       headers: {
         Authorization: `Bearer ${req.session.accessToken}`,
         'Content-Type': 'application/json'
@@ -64,11 +64,19 @@ router.post('/chats', checkAuth, async (req, res) => {
     console.error('Error details:', {
       status: error.response?.status,
       statusText: error.response?.statusText,
-      data: error.response?.data
+      data: error.response?.data,
+      headers: error.response?.headers
     });
-    res.status(500).json({ 
+    
+    // Return more detailed error information
+    res.status(error.response?.status || 500).json({ 
       success: false, 
-      error: error.response ? error.response.data : error.message 
+      error: error.response?.data || error.message,
+      details: {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      }
     });
   }
 });
@@ -190,6 +198,33 @@ router.get('/contacts', checkAuth, async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Failed to fetch contacts',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// Get a specific chat
+router.get('/chat/:chatId', checkAuth, async (req, res) => {
+  const { chatId } = req.params;
+  console.log('Fetching chat:', chatId);
+  
+  try {
+    const response = await axios.get(`https://graph.microsoft.com/v1.0/chats/${chatId}`, {
+      headers: {
+        Authorization: `Bearer ${req.session.accessToken}`
+      }
+    });
+    
+    console.log('Chat fetched successfully:', response.data);
+    res.json({ 
+      success: true, 
+      chat: response.data 
+    });
+  } catch (error) {
+    console.error('Error fetching chat:', error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch chat',
       details: error.response?.data || error.message
     });
   }

@@ -17,9 +17,9 @@
     // MSAL configuration
     const msalConfig = {
       auth: {
-        clientId: 'e03ab8e9-4eb4-4bbc-8c6d-805021e089cd',
-        authority: 'https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84',
-        redirectUri: 'https://onedriveapp.onrender.com'
+        clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",
+        authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
+        redirectUri: "http://localhost:3000/chat.html"
       },
       cache: {
         cacheLocation: "sessionStorage",
@@ -93,7 +93,7 @@
         console.log('Token acquired successfully');
         console.log('Storing token in session...');
         
-        const response = await fetch('/set-token', {
+        const response = await fetch('/api/auth/token', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -147,8 +147,14 @@
             const isOnline = activeUsers.includes(email);
             const isActive = currentChatId && currentChatId.includes(email);
             
+            // Create a safe string representation of the contact object
+            const contactData = {
+              email: email,
+              displayName: displayName
+            };
+            
             return `
-              <div class="contact ${isActive ? 'active' : ''}" onclick="startChat('${email}', '${displayName}')">
+              <div class="contact ${isActive ? 'active' : ''}" onclick="startChat(${JSON.stringify(contactData).replace(/"/g, '&quot;')})">
                 <div class="contact-info">
                   <span class="contact-name">${displayName}</span>
                   <span class="contact-email">${email}</span>
@@ -166,8 +172,14 @@
             const displayName = contact.displayName || 'Unknown Contact';
             const isActive = currentChatId && currentChatId.includes(email);
             
+            // Create a safe string representation of the contact object
+            const contactData = {
+              email: email,
+              displayName: displayName
+            };
+            
             return `
-              <div class="contact ${isActive ? 'active' : ''}" onclick="startChat('${email}', '${displayName}')">
+              <div class="contact ${isActive ? 'active' : ''}" onclick="startChat(${JSON.stringify(contactData).replace(/"/g, '&quot;')})">
                 <div class="contact-info">
                   <span class="contact-name">${displayName}</span>
                   <span class="contact-email">${email}</span>
@@ -178,87 +190,118 @@
         });
     }
 
-    // Start a new chat with a contact
-    async function startChat(email, displayName) {
-      console.log('Starting chat with:', email);
-      try {
-        const accounts = msalInstance.getAllAccounts();
-        if (accounts.length === 0) {
-          throw new Error('No accounts found. Please sign in.');
+    // Show active chat view
+    function showActiveChatView() {
+      document.getElementById('startChatView').style.display = 'none';
+      document.getElementById('activeChatView').style.display = 'flex';
+      document.getElementById('messageInputContainer').style.display = 'block';
+    }
+
+    // Show start chat view
+    function showStartChatView() {
+      document.getElementById('startChatView').style.display = 'flex';
+      document.getElementById('activeChatView').style.display = 'none';
+      document.getElementById('messageInputContainer').style.display = 'none';
+    }
+
+    // Focus search input
+    function focusSearch() {
+      document.querySelector('.search-input').focus();
+    }
+
+    // Search contacts
+    function searchContacts(query) {
+      const contacts = document.querySelectorAll('.contact');
+      const searchTerm = query.toLowerCase();
+      
+      contacts.forEach(contact => {
+        const name = contact.querySelector('.contact-name').textContent.toLowerCase();
+        const email = contact.querySelector('.contact-email').textContent.toLowerCase();
+        
+        if (name.includes(searchTerm) || email.includes(searchTerm)) {
+          contact.style.display = 'flex';
+        } else {
+          contact.style.display = 'none';
         }
+      });
+    }
 
-        const currentUser = accounts[0];
-        const currentUserEmail = currentUser.username;
-        console.log('Current user email:', currentUserEmail);
-
-        const token = await msalInstance.acquireTokenSilent({
-          scopes: ['Chat.ReadWrite']
+    // Start a new chat with a contact
+    async function startChat(member) {
+      try {
+        console.log('Starting chat with member:', member);
+        
+        // Get token silently
+        const tokenResponse = await msalInstance.acquireTokenSilent({
+          scopes: ['Chat.Create', 'Chat.ReadWrite']
         });
-        console.log('Token acquired successfully');
-
+        
         // Store token in session
-        console.log('Storing token in session...');
-        const tokenResponse = await fetch('/set-token', {
+        await fetch('/api/auth/token', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ token: token.accessToken })
+          body: JSON.stringify({ token: tokenResponse.accessToken })
         });
 
-        if (!tokenResponse.ok) {
-          throw new Error('Failed to store token in session');
+        // Get current user's email
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length === 0) {
+          throw new Error('No accounts found. Please sign in.');
         }
+        const currentUserEmail = accounts[0].username;
+        console.log('Current user email:', currentUserEmail);
 
         // Create chat with both current user and selected contact
-        console.log('Creating chat...');
         const response = await fetch('/api/chats', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ 
-            members: [currentUserEmail, email] 
+          body: JSON.stringify({
+            chatType: 'oneOnOne',
+            members: [
+              {
+                '@odata.type': '#microsoft.graph.aadUserConversationMember',
+                'user@odata.bind': `https://graph.microsoft.com/v1.0/users/${currentUserEmail}`,
+                roles: ['owner']
+              },
+              {
+                '@odata.type': '#microsoft.graph.aadUserConversationMember',
+                'user@odata.bind': `https://graph.microsoft.com/v1.0/users/${member.email}`,
+                roles: ['owner']
+              }
+            ]
           })
         });
 
-        console.log('Chat creation response status:', response.status);
-        const responseText = await response.text();
-        console.log('Chat creation response:', responseText);
+        const data = await response.json();
         
-        const data = JSON.parse(responseText);
-        console.log('Parsed response data:', data);
-
-        if (!data.success) {
+        if (!response.ok) {
+          console.error('Chat creation failed:', data);
           throw new Error(data.error?.message || 'Failed to create chat');
         }
 
+        console.log('Chat created successfully:', data);
+        // Update the current chat ID and show the chat view
         currentChatId = data.chatId;
-        // Update the chat header with display name
-        document.getElementById('currentChatName').textContent = displayName;
-        
-        // Show the chat messages container and hide the contacts list
-        const chatMessages = document.querySelector('.chat-messages');
-        const contactsList = document.querySelector('.contacts-list');
-        if (chatMessages) chatMessages.style.display = 'block';
-        if (contactsList) contactsList.style.display = 'none';
-        
-        // Update contacts list to highlight active chat
-        loadContacts();
-        loadChatMessages();
+        showActiveChatView();
+        document.getElementById('chatTitle').textContent = data.topic || 'Chat';
+        loadChatMessages(data.chatId);
       } catch (error) {
-        console.error('Error starting chat:', error);
-        alert('Failed to start chat: ' + (error.message || 'Unknown error'));
+        console.error('Error in startChat:', error);
+        alert(`Failed to start chat: ${error.message}\n\nPlease check the console for more details.`);
       }
     }
 
     // Load messages for the current chat
-    async function loadChatMessages() {
-      if (!currentChatId) return;
+    async function loadChatMessages(chatId) {
+      if (!chatId) return;
 
       try {
         console.log('Loading chat messages...');
-        const response = await fetch(`/api/chats/${currentChatId}/messages`);
+        const response = await fetch(`/api/chats/${chatId}/messages`);
         const data = await response.json();
         
         if (!response.ok) {
@@ -303,14 +346,31 @@
         return;
       }
 
-      // Get current user's email
-      const accounts = msalInstance.getAllAccounts();
-      const currentUserEmail = accounts[0]?.username;
+      // Get current user's ID from the chat ID
+      const chatId = currentChatId;
+      const currentUserId = chatId.split('_')[0].split(':')[1];
+      console.log('Current user ID:', currentUserId);
 
       // Display each message
       messages.forEach(message => {
         const messageDiv = document.createElement('div');
-        const isSent = message.from?.user?.id === currentUserEmail;
+        
+        // Skip system messages
+        if (message.messageType === 'unknownFutureValue' || message.messageType === 'system') {
+          return;
+        }
+
+        // Get the sender information from the message
+        const sender = message.from;
+        const senderId = sender?.user?.id;
+        
+        console.log('Message object:', message);
+        console.log('Sender object:', sender);
+        console.log('Sender ID:', senderId);
+        
+        const isSent = senderId === currentUserId;
+        console.log('Is sent:', isSent);
+        
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         
         const contentDiv = document.createElement('div');
@@ -361,389 +421,332 @@
 
         console.log('Message sent successfully');
         messageInput.value = '';
-        loadChatMessages();
+        loadChatMessages(currentChatId);
       } catch (error) {
         console.error('Error sending message:', error);
         alert('Error sending message: ' + error.message);
       }
     }
 
-    // Add DOMContentLoaded event listener
+    // Initialize the chat interface
     document.addEventListener('DOMContentLoaded', function() {
       console.log('DOM fully loaded and parsed');
-      initialize();
       
-      // Add event listener for contact search only if the element exists
-      const contactSearch = document.getElementById('contactSearch');
-      if (contactSearch) {
-        contactSearch.addEventListener('input', async (e) => {
-          const searchTerm = e.target.value.toLowerCase();
-          const contacts = await fetch('/api/contacts').then(res => res.json());
-          
-          if (contacts.success) {
-            const filteredContacts = contacts.contacts.filter(contact => 
-              contact.displayName.toLowerCase().includes(searchTerm) ||
-              (contact.mail || contact.userPrincipalName || '').toLowerCase().includes(searchTerm)
-            );
-            
-            const searchResults = document.getElementById('searchResults');
-            if (searchResults) {
-              searchResults.innerHTML = '';
-              
-              filteredContacts.forEach(contact => {
-                const contactItem = document.createElement('div');
-                contactItem.className = 'contact-item';
-                contactItem.innerHTML = `
-                  <div class="contact-info">
-                    <span class="contact-name">${contact.displayName}</span>
-                    <span class="contact-email">${contact.mail || contact.userPrincipalName || 'No email'}</span>
-                  </div>
-                `;
-                
-                contactItem.onclick = () => {
-                  startChat(contact.mail || contact.userPrincipalName || '', contact.displayName || '');
-                  closeNewChatModal();
-                };
-                
-                searchResults.appendChild(contactItem);
-              });
-            }
-          }
-        });
+      // Check if we're on a specific chat page
+      const pathParts = window.location.pathname.split('/');
+      const chatId = pathParts[pathParts.length - 1];
+      
+      if (chatId && chatId !== 'chat.html') {
+        console.log('Loading specific chat:', chatId);
+        loadChat(chatId);
+      } else {
+        console.log('Initializing new chat view');
+        initialize();
+        showStartChatView();
       }
     });
 
-    // Show new chat modal
-    function showNewChatModal() {
-      document.getElementById('newChatModal').style.display = 'block';
-    }
+    // Load chat details and messages
+    async function loadChat(chatId) {
+      try {
+        console.log('Loading chat details for:', chatId);
+        const response = await fetch(`/api/chat/${chatId}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load chat');
+        }
 
-    // Close new chat modal
-    function closeNewChatModal() {
-      document.getElementById('newChatModal').style.display = 'none';
-    }
-
-    // Show contacts list and hide chat
-    function showContactsList() {
-      const chatMessages = document.querySelector('.chat-messages');
-      const contactsList = document.querySelector('.contacts-list');
-      if (chatMessages) chatMessages.style.display = 'none';
-      if (contactsList) contactsList.style.display = 'block';
-      currentChatId = null;
-      document.getElementById('currentChatName').textContent = 'Select a chat';
+        console.log('Chat loaded successfully:', data);
+        currentChatId = chatId;
+        showActiveChatView();
+        document.getElementById('chatTitle').textContent = data.chat.topic || 'Chat';
+        loadChatMessages(chatId);
+      } catch (error) {
+        console.error('Error loading chat:', error);
+        alert('Error loading chat: ' + error.message);
+      }
     }
   </script>
   <style>
     .chat-container {
       display: flex;
-      height: calc(100vh - 80px);
-      margin: 20px;
+      height: calc(100vh - 160px);
       margin-top: 160px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      position: relative;
-      z-index: 1;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar {
+      width: 300px;
+      background: white;
+      border-right: 1px solid #e1e1e1;
+      display: flex;
+      flex-direction: column;
+      height: 100%; /* Make sidebar full height of container */
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid #e1e1e1;
+    }
+
+    .search-container {
+      padding: 10px 20px;
+      border-bottom: 1px solid #e1e1e1;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #e1e1e1;
+      border-radius: 4px;
+      font-size: 14px;
     }
 
     .contacts-list {
-      width: 300px;
-      background: #f0f2f5;
-      border-right: 1px solid #ddd;
-      padding: 20px;
-      height: 100%;
-      overflow-y: auto;
-    }
-
-    .chat-main {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    .chat-messages {
-      flex: 1;
-      padding: 20px;
       overflow-y: auto;
-      background: #f0f2f5;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .chat-header {
-      padding: 15px 20px;
-      border-bottom: 1px solid #ddd;
-      background: #f0f2f5;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .chat-input {
-      padding: 15px 20px;
-      border-top: 1px solid #ddd;
-      background: #f0f2f5;
-      height: 150px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      padding: 10px 0;
     }
 
     .contact {
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 5px;
+      padding: 12px 20px;
       cursor: pointer;
-      background: white;
-      border: 1px solid #ddd;
-      transition: all 0.3s ease;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-    }
-
-    .contact.active {
-      background: #e9ecef;
-      border-left: 4px solid #25D366;
+      justify-content: space-between;
+      transition: background-color 0.2s;
     }
 
     .contact:hover {
       background-color: #f5f5f5;
     }
 
+    .contact.active {
+      background-color: #e3f2fd;
+    }
+
     .contact-info {
       flex: 1;
     }
 
     .contact-name {
-      font-weight: 600;
+      display: block;
+      font-weight: 500;
       color: #333;
-      margin-bottom: 3px;
     }
 
     .contact-email {
+      display: block;
+      font-size: 12px;
       color: #666;
-      font-size: 0.85em;
     }
 
-    .message {
-      margin-bottom: 15px;
-      padding: 10px 15px;
-      border-radius: 8px;
-      max-width: 70%;
-      position: relative;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    .online-status {
+      color: #4caf50;
+      font-size: 12px;
+    }
+
+    .chat-area {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      word-wrap: break-word;
-      align-self: flex-start;
+      background: rgba(245, 245, 245, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
-    .message.sent {
-      background: #DCF8C6;
-      color: #000;
-      margin-left: auto;
-      border-bottom-right-radius: 0;
-      align-self: flex-end;
+    .chat-header {
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    .message.received {
-      background: #FFFFFF;
-      color: #000;
-      border-bottom-left-radius: 0;
-      border: 1px solid #e9ecef;
-      margin-right: auto;
-      align-self: flex-start;
-    }
-
-    .message-content {
-      margin-bottom: 5px;
-      white-space: pre-wrap;
-    }
-
-    .message-time {
-      font-size: 0.75em;
-      color: #666;
-      text-align: right;
-      margin-top: 5px;
-    }
-
-    .back-button {
+    .chat-header .back-button {
       background: none;
       border: none;
       color: #0078d4;
+      font-size: 16px;
       cursor: pointer;
       padding: 8px;
-      border-radius: 4px;
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: 1em;
+      gap: 8px;
+      transition: color 0.2s;
     }
 
-    .back-button:hover {
-      background: #e9ecef;
+    .chat-header .back-button:hover {
+      color: #106ebe;
     }
 
-    .back-button i {
-      font-size: 1.2em;
+    .chat-header .back-button i {
+      font-size: 18px;
     }
 
-    .new-chat-button {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 20px;
-      background: #25D366;
-      color: white;
+    .chat-header .chat-info {
+      flex: 1;
+      text-align: center;
+    }
+
+    .chat-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      position: relative;
+      word-wrap: break-word;
+    }
+
+    .message.sent {
+      background: #DCF8C6; /* Light green for sent messages */
+      color: #000;
+      align-self: flex-end;
+      border-bottom-right-radius: 0;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .message.received {
+      background: #FFFFFF; /* White for received messages */
+      color: #000;
+      align-self: flex-start;
+      border-bottom-left-radius: 0;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .message-time {
+      font-size: 11px;
+      opacity: 0.8;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .message.sent .message-time {
+      color: #667781; /* WhatsApp-like timestamp color */
+    }
+
+    .message.received .message-time {
+      color: #667781; /* WhatsApp-like timestamp color */
+    }
+
+    .message-input-container {
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      gap: 12px;
+    }
+
+    .message-input {
+      flex: 1;
+      padding: 16px;
       border: none;
       border-radius: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #253847;
+      font-size: 16px;
+      min-height: 60px;
+      max-height: 120px;
+      resize: none;
+      outline: none;
+      transition: background-color 0.2s;
+    }
+
+    .message-input:focus {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .message-input::placeholder {
+      color: rgba(37, 56, 71, 0.5);
+    }
+
+    .send-button {
+      background: linear-gradient(135deg, #253847, #1a2a35);
+      color: white;
+      border: none;
+      width: 80px;
+      height: 60px;
+      border-radius: 12px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      font-weight: 600;
-      transition: background-color 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(37, 56, 71, 0.2);
     }
 
-    .new-chat-button:hover {
-      background: #128C7E;
-    }
-
-    .chat-input textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      resize: none;
-      height: 100px;
-      font-size: 1em;
-      transition: border-color 0.3s ease;
-    }
-
-    .chat-input textarea:focus {
-      outline: none;
-      border-color: #25D366;
-    }
-
-    .chat-input button {
-      align-self: flex-end;
-      padding: 10px 20px;
-      background: #25D366;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background-color 0.3s ease;
-    }
-
-    .chat-input button:hover {
-      background: #128C7E;
-    }
-
-    /* New Chat Modal Styling */
-    .modal {
-      display: none;
-      position: fixed;
+    .send-button::before {
+      content: '';
+      position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+      transform: translateX(-100%);
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .modal-content {
-      background: white;
-      width: 90%;
-      max-width: 500px;
-      margin: 50px auto;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      position: relative;
+    .send-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 56, 71, 0.3);
     }
 
-    .modal .close {
-      position: absolute;
-      right: 20px;
-      top: 20px;
+    .send-button:hover::before {
+      transform: translateX(100%);
+    }
+
+    .send-button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(37, 56, 71, 0.2);
+    }
+
+    .send-button i {
       font-size: 24px;
-      cursor: pointer;
-      color: #666;
-    }
-
-    .modal .close:hover {
-      color: #333;
-    }
-
-    .search-contacts {
-      margin: 20px 0;
       position: relative;
+      z-index: 1;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-right: 8px;
     }
 
-    .search-contacts input {
-      width: 100%;
-      padding: 12px 15px;
-      padding-left: 40px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 1em;
-      transition: all 0.3s ease;
+    .send-button span {
+      font-size: 16px;
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
     }
 
-    .search-contacts input:focus {
-      outline: none;
-      border-color: #0078d4;
-      box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
-    }
-
-    .search-contacts i {
-      position: absolute;
-      left: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #666;
-    }
-
-    .search-results {
-      max-height: 400px;
-      overflow-y: auto;
-      margin-top: 20px;
-    }
-
-    .contact-item {
-      padding: 15px;
-      border-bottom: 1px solid #eee;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-
-    .contact-item:hover {
-      background-color: #f5f5f5;
-    }
-
-    .contact-item:last-child {
-      border-bottom: none;
-    }
-
-    .contact-info {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .contact-name {
-      font-weight: 600;
-      color: #333;
-    }
-
-    .contact-email {
-      color: #666;
-      font-size: 0.9em;
+    .send-button:hover i {
+      transform: scale(1.1);
     }
 
     .message.empty-state {
@@ -756,17 +759,18 @@
       color: #666;
       background: #f8f9fa;
       border-radius: 8px;
-      margin: 20px;
+      margin: 20px auto;
+      max-width: 400px;
     }
 
     .message.empty-state i {
-      font-size: 2.5em;
+      font-size: 48px;
       color: #0078d4;
       margin-bottom: 15px;
     }
 
     .message.empty-state span {
-      font-size: 1.1em;
+      font-size: 16px;
       color: #333;
     }
 
@@ -788,6 +792,75 @@
       flex: 1;
       font-size: 1.2em;
     }
+
+    .start-chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+      background: white;
+      height: 100%;
+    }
+
+    .start-chat-icon {
+      font-size: 48px;
+      color: #253847; /* Dark blue color */
+      margin-bottom: 20px;
+    }
+
+    .start-chat-title {
+      font-size: 24px;
+      color: #253847; /* Dark blue color */
+      margin-bottom: 10px;
+    }
+
+    .start-chat-description {
+      color: #253847; /* Dark blue color */
+      margin-bottom: 30px;
+      opacity: 0.8;
+    }
+
+    .new-chat-button {
+      padding: 12px 24px;
+      background: #253847; /* Dark blue color */
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+
+    .new-chat-button:hover {
+      background: #1a2a35; /* Slightly darker blue on hover */
+    }
+
+    .search-contacts-button {
+      background-color: #253847;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .search-contacts-button:hover {
+      background-color: #1a2a35;
+      color: white !important;
+    }
+
+    .search-contacts-button i {
+      font-size: 14px;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -806,39 +879,51 @@
   </header>
 
   <div class="chat-container">
-    <div class="contacts-list">
-      <button class="new-chat-button" onclick="showNewChatModal()">
-        <i class="fas fa-plus"></i> New Chat
-      </button>
-      <div id="contactsList"></div>
-    </div>
-    <div class="chat-main">
-      <div class="chat-header">
-        <button class="back-button" onclick="showContactsList()">
-          <i class="fas fa-arrow-left"></i> Back
-        </button>
-        <h2 id="currentChatName">Select a chat</h2>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Chats</h2>
       </div>
-      <div class="chat-messages" id="chatMessages">
-        <!-- Messages will be populated here -->
+      <div class="search-container">
+        <input type="text" class="search-input" placeholder="Search contacts..." oninput="searchContacts(this.value)">
       </div>
-      <div class="chat-input">
-        <textarea id="messageInput" placeholder="Type a message..."></textarea>
-        <button onclick="sendMessage()">Send</button>
+      <div class="contacts-list" id="contactsList">
+        <!-- Contacts will be loaded here -->
       </div>
     </div>
-  </div>
 
-  <!-- New Chat Modal -->
-  <div id="newChatModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <span class="close" onclick="closeNewChatModal()">&times;</span>
-      <h2>Start New Chat</h2>
-      <div class="search-contacts">
-        <i class="fas fa-search"></i>
-        <input type="text" id="contactSearch" placeholder="Search contacts by name or email...">
+    <!-- Chat Area -->
+    <div class="chat-area">
+      <div id="startChatView" class="start-chat-container">
+        <i class="fas fa-comments start-chat-icon"></i>
+        <h2 class="start-chat-title">Start a New Chat</h2>
+        <p class="start-chat-description">Select a contact from the sidebar to start chatting</p>
+        <button class="new-chat-button" onclick="focusSearch()">
+          <i class="fas fa-search"></i> Search Contacts
+        </button>
       </div>
-      <div id="searchResults" class="search-results"></div>
+
+      <div id="activeChatView" style="display: none;">
+        <div class="chat-header">
+          <button class="back-button" onclick="showStartChatView()">
+            <i class="fas fa-arrow-left"></i>
+            Back
+          </button>
+          <div class="chat-info">
+            <h3 id="chatTitle">Chat with <span id="currentContactName"></span></h3>
+          </div>
+          <div style="width: 60px;"></div> <!-- Spacer for alignment -->
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <!-- Messages will be loaded here -->
+        </div>
+        <div class="message-input-container" id="messageInputContainer">
+          <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="3"></textarea>
+          <button class="send-button" onclick="sendMessage()">
+            <i class="fas fa-paper-plane"></i> Send
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </body>

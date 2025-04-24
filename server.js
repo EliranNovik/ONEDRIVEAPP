@@ -90,6 +90,16 @@ app.post("/set-token", (req, res) => {
   }
 });
 
+// Add the missing /api/auth/token endpoint
+app.post("/api/auth/token", (req, res) => {
+  if (req.body.token) {
+    req.session.accessToken = req.body.token;
+    res.json({ success: true });
+  } else {
+    res.status(400).json({ success: false, message: "No token provided" });
+  }
+});
+
 app.get("/get-token", (req, res) => {
   res.json({ token: req.session.accessToken || null });
 });
@@ -107,7 +117,13 @@ app.use((req, res, next) => {
 
 // Mount routes with proper prefixes
 app.use("/teams", teamsRoutes);
-app.use("/api", chatRoutes); // Changed from /chat to /api to match the frontend requests
+app.use("/api", chatRoutes); // API routes
+app.use("/chat", chatRoutes); // Chat view routes
+
+// Add route to serve chat.html for any chat ID
+app.get('/chat/:chatId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'chat.html'));
+});
 
 // Add error handling middleware
 app.use((err, req, res, next) => {
