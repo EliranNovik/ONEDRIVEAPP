@@ -46,7 +46,8 @@ app.use(session({
     httpOnly: true, // Prevents client-side access to the cookie
     sameSite: 'lax', // Protects against CSRF
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+  },
+  name: 'sessionId' // Set a specific name for the session cookie
 }));
 
 // Serve static files from the "public" folder
@@ -87,28 +88,48 @@ app.get('/api/active-users', (req, res) => {
   res.json(Array.from(activeUsers.keys()));
 });
 
+// Middleware to check authentication state
+const checkAuth = (req, res, next) => {
+  if (req.session && req.session.accessToken) {
+    return next();
+  }
+  res.redirect('/');
+};
+
+// Route to render index.ejs with session data
+app.get('/teams', (req, res) => {
+  res.render('index', { 
+    session: req.session,
+    user: req.session.user || null
+  });
+});
+
 // Endpoint to store the token from the client into the session
 app.post("/set-token", (req, res) => {
   if (req.body.token) {
     req.session.accessToken = req.body.token;
-    res.json({ success: true });
+    if (req.body.user) {
+      req.session.user = req.body.user;
+    }
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error saving session:', err);
+        res.status(500).json({ success: false, message: "Error saving session" });
+      } else {
+        res.json({ success: true });
+      }
+    });
   } else {
     res.status(400).json({ success: false, message: "No token provided" });
   }
 });
 
-// Add the missing /api/auth/token endpoint
-app.post("/api/auth/token", (req, res) => {
-  if (req.body.token) {
-    req.session.accessToken = req.body.token;
-    res.json({ success: true });
-  } else {
-    res.status(400).json({ success: false, message: "No token provided" });
-  }
-});
-
+// Get token endpoint
 app.get("/get-token", (req, res) => {
-  res.json({ token: req.session.accessToken || null });
+  res.json({ 
+    token: req.session.accessToken || null,
+    user: req.session.user || null
+  });
 });
 
 // Mount teams routes at /teams (must come after session middleware)

@@ -33,7 +33,32 @@
   <div class="content-container meeting-creator-container">
     <h2>Create a Meeting</h2>
     <% if (!session || !session.accessToken) { %>
-      <p>Please <a href="/teams/login">login</a> to create a meeting.</p>
+      <!-- Check for existing token in localStorage first -->
+      <div id="auth-check-loading">Checking authentication status...</div>
+      <div id="auth-check-failed" style="display: none;">
+        <p>Please <a href="/teams/login">login</a> to create a meeting.</p>
+      </div>
+      <script>
+        // Check for existing authentication on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+          try {
+            const response = await fetch('/get-token');
+            const data = await response.json();
+            
+            if (data.token) {
+              // We have a valid token, reload the page to show the meeting form
+              window.location.reload();
+            } else {
+              document.getElementById('auth-check-loading').style.display = 'none';
+              document.getElementById('auth-check-failed').style.display = 'block';
+            }
+          } catch (error) {
+            console.error('Error checking authentication:', error);
+            document.getElementById('auth-check-loading').style.display = 'none';
+            document.getElementById('auth-check-failed').style.display = 'block';
+          }
+        });
+      </script>
     <% } else { %>
       <form id="meetingForm" class="meeting-form">
         <div>

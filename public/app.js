@@ -148,11 +148,19 @@ async function handleRedirectPromise() {
           document.getElementById('signout-button').style.display = 'inline-block';
         }
         
-        // Save token to session
+        // Save token and user info to session
         await fetch('/set-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: accessToken })
+          body: JSON.stringify({ 
+            token: accessToken,
+            user: {
+              id: currentAccount.homeAccountId,
+              name: currentAccount.name,
+              username: currentAccount.username,
+              displayName: currentAccount.name
+            }
+          })
         });
         
         Toast.fire({
@@ -178,11 +186,19 @@ async function handleRedirectPromise() {
         document.getElementById('signout-button').style.display = 'inline-block';
       }
       
-      // Save token to session
+      // Save token and user info to session
       await fetch('/set-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: accessToken })
+        body: JSON.stringify({ 
+          token: accessToken,
+          user: {
+            id: currentAccount.homeAccountId,
+            name: currentAccount.name,
+            username: currentAccount.username,
+            displayName: currentAccount.name
+          }
+        })
       });
       
       Toast.fire({
