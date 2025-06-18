@@ -37,9 +37,13 @@ router.get("/", (req, res) => {
 // Login Route for Meeting Creator
 router.get("/login", async (req, res) => {
   try {
+    const redirectUri = process.env.NODE_ENV === 'production'
+      ? 'https://onedriveapp.onrender.com/onedriveapp'
+      : 'http://localhost:3000/onedriveapp';
+
     const authUrl = await pca.getAuthCodeUrl({
       scopes: ["User.Read", "OnlineMeetings.ReadWrite", "Calendars.ReadWrite"],
-      redirectUri: "http://localhost:3000/onedriveapp"
+      redirectUri: redirectUri
     });
     res.redirect(authUrl);
   } catch (error) {

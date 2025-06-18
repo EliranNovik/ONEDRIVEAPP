@@ -42,20 +42,50 @@
         // Check for existing authentication on page load
         document.addEventListener('DOMContentLoaded', async function() {
           try {
+            // First check MSAL accounts
+            const accounts = msalInstance.getAllAccounts();
+            if (accounts.length > 0) {
+              currentAccount = accounts[0];
+              msalInstance.setActiveAccount(currentAccount);
+              
+              // Try to acquire token silently
+              const tokenResponse = await msalInstance.acquireTokenSilent({
+                scopes: graphScopes,
+                account: currentAccount
+              });
+
+              // Save token to session
+              await fetch('/set-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  token: tokenResponse.accessToken,
+                  user: {
+                    id: currentAccount.homeAccountId,
+                    name: currentAccount.name,
+                    username: currentAccount.username,
+                    displayName: currentAccount.name
+                  }
+                })
+              });
+
+              // Reload page to show meeting form
+              window.location.reload();
+            }
+
+            // If no MSAL account, check server session
             const response = await fetch('/get-token');
             const data = await response.json();
             
             if (data.token) {
               // We have a valid token, reload the page to show the meeting form
               window.location.reload();
-            } else {
-              document.getElementById('auth-check-loading').style.display = 'none';
-              document.getElementById('auth-check-failed').style.display = 'block';
             }
           } catch (error) {
             console.error('Error checking authentication:', error);
-            document.getElementById('auth-check-loading').style.display = 'none';
-            document.getElementById('auth-check-failed').style.display = 'block';
+            // Show login link if authentication check fails
+            document.getElementById('auth-check-loading')?.style.display = 'none';
+            document.getElementById('auth-check-failed')?.style.display = 'block';
           }
         });
       </script>
@@ -184,7 +214,14 @@
       auth: {
         clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",
         authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
-        redirectUri: "http://localhost:3000/onedriveapp"
+        redirectUri: window.location.hostname === "localhost" 
+          ? "http://localhost:3000/onedriveapp"
+          : "https://onedriveapp.onrender.com/onedriveapp",
+        navigateToLoginRequestUrl: true
+      },
+      cache: {
+        cacheLocation: "localStorage",
+        storeAuthStateInCookie: true
       }
     };
 

@@ -45,10 +45,23 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production', // Only send cookies over HTTPS in production
     httpOnly: true, // Prevents client-side access to the cookie
     sameSite: 'lax', // Protects against CSRF
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined // Allow sharing across subdomains in production
   },
-  name: 'sessionId' // Set a specific name for the session cookie
+  name: 'sessionId', // Set a specific name for the session cookie
+  proxy: process.env.NODE_ENV === 'production' // Trust the reverse proxy when in production
 }));
+
+// Add security headers
+app.use((req, res, next) => {
+  res.set({
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'X-XSS-Protection': '1; mode=block'
+  });
+  next();
+});
 
 // Serve static files from the "public" folder
 app.use(express.static(path.join(__dirname, 'public'), {
