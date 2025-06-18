@@ -46,7 +46,7 @@ app.use(session({
     httpOnly: true, // Prevents client-side access to the cookie
     sameSite: 'lax', // Protects against CSRF
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined // Allow sharing across subdomains in production
+    domain: process.env.NODE_ENV === 'production' ? 'onedriveapp.onrender.com' : undefined // Fix domain for production
   },
   name: 'sessionId', // Set a specific name for the session cookie
   proxy: process.env.NODE_ENV === 'production' // Trust the reverse proxy when in production
