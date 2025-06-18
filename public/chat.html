@@ -21,11 +21,12 @@
         authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
         redirectUri: window.location.hostname === "localhost" 
           ? "http://localhost:3000/chat.html"
-          : "https://onedriveapp.onrender.com/chat.html"
+          : "https://onedriveapp.onrender.com/chat.html",
+        navigateToLoginRequestUrl: true
       },
       cache: {
-        cacheLocation: "sessionStorage",
-        storeAuthStateInCookie: false
+        cacheLocation: "localStorage",
+        storeAuthStateInCookie: true
       }
     };
 
@@ -93,39 +94,51 @@
         });
 
         console.log('Token acquired successfully');
-        console.log('Storing token in session...');
         
-        const response = await fetch('/api/auth/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ token: tokenResponse.accessToken })
-        });
+        // First store the token in session
+        try {
+          const storeTokenResponse = await fetch('/api/auth/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ token: tokenResponse.accessToken })
+          });
 
-        if (!response.ok) {
-          throw new Error('Failed to store token in session');
+          if (!storeTokenResponse.ok) {
+            throw new Error('Failed to store token in session');
+          }
+
+          await storeTokenResponse.json(); // Wait for the response to be processed
+          console.log('Token stored in session successfully');
+
+          // Only proceed to fetch contacts after token is successfully stored
+          console.log('Fetching contacts...');
+          const contactsResponse = await fetch('/api/contacts');
+          if (!contactsResponse.ok) {
+            const errorData = await contactsResponse.json();
+            throw new Error(errorData.error || 'Failed to fetch contacts');
+          }
+
+          const data = await contactsResponse.json();
+          console.log('Contacts fetched successfully:', data.contacts);
+          displayContacts(data.contacts);
+
+        } catch (tokenStoreError) {
+          console.error('Error storing token:', tokenStoreError);
+          throw new Error('Failed to store authentication token. Please try signing in again.');
         }
 
-        console.log('Fetching contacts...');
-        const contactsResponse = await fetch('/api/contacts');
-        const data = await contactsResponse.json();
-        
-        if (!contactsResponse.ok) {
-          throw new Error(data.error || 'Failed to fetch contacts');
-        }
-
-        console.log('Contacts fetched successfully:', data.contacts);
-        displayContacts(data.contacts);
       } catch (error) {
-        console.error('Error loading contacts:', error);
+        console.error('Error in loadContacts:', error);
         if (error instanceof msal.InteractionRequiredAuthError) {
           console.log('Consent required, redirecting to login...');
           await msalInstance.loginRedirect({
             scopes: ['User.Read', 'Chat.Read', 'Chat.ReadWrite', 'Contacts.Read']
           });
         } else {
-          alert('Error loading contacts: ' + error.message);
+          // Show user-friendly error message
+          alert('Error: ' + error.message);
         }
       }
     }
