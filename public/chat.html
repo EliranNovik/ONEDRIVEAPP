@@ -95,21 +95,31 @@
 
         console.log('Token acquired successfully');
         
-        // First store the token in session
+        // Store token and user info in session
         try {
-          const storeTokenResponse = await fetch('/api/auth/token', {
+          const storeTokenResponse = await fetch('/set-token', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ token: tokenResponse.accessToken })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              token: tokenResponse.accessToken,
+              user: {
+                id: accounts[0].homeAccountId,
+                name: accounts[0].name,
+                username: accounts[0].username,
+                displayName: accounts[0].name
+              }
+            })
           });
 
           if (!storeTokenResponse.ok) {
             throw new Error('Failed to store token in session');
           }
 
-          await storeTokenResponse.json(); // Wait for the response to be processed
+          const responseData = await storeTokenResponse.json();
+          if (!responseData.success) {
+            throw new Error(responseData.message || 'Failed to store token in session');
+          }
+
           console.log('Token stored in session successfully');
 
           // Only proceed to fetch contacts after token is successfully stored
@@ -251,20 +261,35 @@
           scopes: ['Chat.Create', 'Chat.ReadWrite']
         });
         
-        // Store token in session
-        await fetch('/api/auth/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ token: tokenResponse.accessToken })
-        });
-
-        // Get current user's email
+        // Store token and user info in session
         const accounts = msalInstance.getAllAccounts();
         if (accounts.length === 0) {
           throw new Error('No accounts found. Please sign in.');
         }
+
+        const storeTokenResponse = await fetch('/set-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            token: tokenResponse.accessToken,
+            user: {
+              id: accounts[0].homeAccountId,
+              name: accounts[0].name,
+              username: accounts[0].username,
+              displayName: accounts[0].name
+            }
+          })
+        });
+
+        if (!storeTokenResponse.ok) {
+          throw new Error('Failed to store token in session');
+        }
+
+        const responseData = await storeTokenResponse.json();
+        if (!responseData.success) {
+          throw new Error(responseData.message || 'Failed to store token in session');
+        }
+
         const currentUserEmail = accounts[0].username;
         console.log('Current user email:', currentUserEmail);
 
