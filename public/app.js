@@ -29,7 +29,12 @@ const msalConfig = {
   auth: {
     clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",  
     authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
-    redirectUri: window.REDIRECT_URI || "https://onedriveapp.onrender.com"
+    redirectUri: window.REDIRECT_URI || "https://onedriveapp.onrender.com",
+    navigateToLoginRequestUrl: true
+  },
+  cache: {
+    cacheLocation: "localStorage", // This enables persistent login
+    storeAuthStateInCookie: true // This helps with IE11 or cross-site scenarios
   }
 };
 
@@ -39,13 +44,16 @@ const msalInstance = new msal.PublicClientApplication(msalConfig);
 const graphScopes = [
   "Files.ReadWrite.All",
   "OnlineMeetings.ReadWrite",
+  "Calendars.Read",
+  "Calendars.Read.Shared",
   "Calendars.ReadWrite",
+  "Calendars.ReadWrite.Shared",
   "User.Read",
   "Mail.Send",
-  "Chat.ReadWrite",  // For reading and writing chat messages
-  "Chat.Create",     // For creating new chats
-  "Chat.ReadBasic",   // For basic chat functionality
-  "Contacts.Read"    // Added for contact access
+  "Chat.ReadWrite",
+  "Chat.Create",
+  "Chat.ReadBasic",
+  "Contacts.Read"
 ];
 
 /* ---------------- Utility: Detect Mobile Device ---------------- */
@@ -113,37 +121,117 @@ function updateWelcomeMessage(userName) {
 // Handle redirect promise to complete authentication
 async function handleRedirectPromise() {
   try {
+    console.log('Handling redirect...');
     const response = await msalInstance.handleRedirectPromise();
-    if (response) {
-      console.log('Login successful');
-      const account = response.account;
-      currentAccount = account;
+    
+    // Check if we have any accounts
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      currentAccount = accounts[0];
       msalInstance.setActiveAccount(currentAccount);
-      updateWelcomeMessage(account.name);
-      Toast.fire({
-        icon: 'success',
-        title: `Welcome, ${account.name}!`
-      });
+      console.log('Active account set:', currentAccount.username);
+      
+      try {
+        // Try to acquire token silently first
+        const tokenResponse = await msalInstance.acquireTokenSilent({
+          scopes: graphScopes,
+          account: currentAccount
+        });
+        
+        accessToken = tokenResponse.accessToken;
+        console.log('Token acquired silently');
+        
+        // Update UI
+        updateWelcomeMessage(currentAccount.name);
+        document.getElementById('signin-button').style.display = 'none';
+        if (document.getElementById('signout-button')) {
+          document.getElementById('signout-button').style.display = 'inline-block';
+        }
+        
+        // Save token to session
+        await fetch('/set-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: accessToken })
+        });
+        
+        Toast.fire({
+          icon: 'success',
+          title: `Welcome back, ${currentAccount.name}!`
+        });
+      } catch (error) {
+        console.error('Error acquiring token silently:', error);
+        if (error instanceof msal.InteractionRequiredAuthError) {
+          // If silent token acquisition fails, try interactive
+          await loginInteractive();
+        }
+      }
+    } else if (response) {
+      // We got a response but no account - this is the first sign-in
+      currentAccount = response.account;
+      msalInstance.setActiveAccount(currentAccount);
+      accessToken = response.accessToken;
+      
+      updateWelcomeMessage(currentAccount.name);
       document.getElementById('signin-button').style.display = 'none';
-      document.getElementById('signout-button').style.display = 'inline-block';
+      if (document.getElementById('signout-button')) {
+        document.getElementById('signout-button').style.display = 'inline-block';
+      }
       
-      // Get a token
-      const tokenResponse = await msalInstance.acquireTokenSilent({ 
-        scopes: graphScopes, 
-        account: currentAccount 
-      });
-      
-      accessToken = tokenResponse.accessToken;
-      
-      // Save the token to the server session
+      // Save token to session
       await fetch('/set-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: accessToken })
       });
+      
+      Toast.fire({
+        icon: 'success',
+        title: `Welcome, ${currentAccount.name}!`
+      });
     }
   } catch (error) {
-    console.error('Error during redirect:', error);
+    console.error('Error during redirect handling:', error);
+    Toast.fire({
+      icon: 'error',
+      title: 'Sign-in failed. Please try again.'
+    });
+  }
+}
+
+// Helper function for interactive login
+async function loginInteractive() {
+  try {
+    const loginResponse = await msalInstance.loginPopup({
+      scopes: graphScopes
+    });
+    
+    currentAccount = loginResponse.account;
+    msalInstance.setActiveAccount(currentAccount);
+    accessToken = loginResponse.accessToken;
+    
+    updateWelcomeMessage(currentAccount.name);
+    document.getElementById('signin-button').style.display = 'none';
+    if (document.getElementById('signout-button')) {
+      document.getElementById('signout-button').style.display = 'inline-block';
+    }
+    
+    await fetch('/set-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: accessToken })
+    });
+    
+    Toast.fire({
+      icon: 'success',
+      title: `Welcome, ${currentAccount.name}!`
+    });
+  } catch (error) {
+    console.error('Error during interactive login:', error);
+    Toast.fire({
+      icon: 'error',
+      title: 'Sign-in failed. Please try again.'
+    });
   }
 }
 

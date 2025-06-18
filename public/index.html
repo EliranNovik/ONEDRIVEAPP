@@ -150,129 +150,16 @@
         margin: 10px 0;
       }
     }
-
-    .header2 {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      z-index: 1000;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      padding: 20px;
-    }
-
-    .header-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      gap: 20px;
-      position: relative;
-    }
-
-    .logo {
-      height: 50px;
-      width: auto;
-      z-index: 1001;
-    }
-
-    .main-nav {
-      margin-top: 20px;
-    }
-
-    .main-nav ul {
-      display: flex;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      gap: 20px;
-      justify-content: center;
-    }
-
-    .main-nav li {
-      margin: 0;
-    }
-
-    .main-nav a {
-      color: #253847;
-      text-decoration: none;
-      font-weight: 500;
-      padding: 8px 12px;
-      border-radius: 4px;
-      transition: background-color 0.2s;
-    }
-
-    .main-nav a:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .header-right {
-      position: absolute;
-      right: 0;
-      top: 0;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      z-index: 1002;
-    }
-
-    .welcome-message {
-      margin-right: 20px;
-      color: #253847;
-      z-index: 1002;
-    }
-
-    .auth-buttons {
-      display: flex;
-      gap: 10px;
-      z-index: 1002;
-    }
-
-    #signin-button, #signout-button {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      background-color: #253847;
-      color: white;
-      cursor: pointer;
-      font-weight: 500;
-      z-index: 1002;
-    }
-
-    #signin-button:hover, #signout-button:hover {
-      background-color: #1a2a35;
-    }
-
-    .content-container {
-      margin-top: 240px;
-      padding: 20px;
-      max-width: 1200px;
-      margin-left: auto;
-      margin-right: auto;
-      position: relative;
-      z-index: 1;
-    }
-
-    @media (max-width: 768px) {
-      .header2 {
-        position: relative; /* Changed from fixed to relative for mobile */
-      }
-
-      .content-container {
-        margin-top: 20px; /* Reduced margin since header is no longer fixed */
-      }
-    }
   </style>
 </head>
 <body>
 
   <script>
-    window.REDIRECT_URI = "https://onedriveapp.onrender.com";
+    if (window.location.hostname === "localhost") {
+      window.REDIRECT_URI = "http://localhost:3000/onedriveapp";
+    } else {
+      window.REDIRECT_URI = "https://onedriveapp.onrender.com";
+    }
   </script>
 
   <header class="header2">
@@ -295,6 +182,7 @@
           <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
           <li><a href="/teams" id="create-meeting-link">Create a Meeting</a></li>
           <li><a href="/chat.html">Team Chat</a></li>
+          <!-- <li><a href="/calendar"></i> Calendar</a></li> -->
         </ul>
       </nav>
     </div>

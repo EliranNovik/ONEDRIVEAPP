@@ -15,7 +15,7 @@ body {
 /* Main Container for OneDrive App */
 .container {
   max-width: 900px;
-  margin: 150px auto 20px;
+  margin: 20px auto;
   padding: 20px 40px;
   border-radius: 15px;
   position: relative;
@@ -28,51 +28,46 @@ body {
 
 /* Header Styling */
 .header2 {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  position: relative;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 1000;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.9);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 20px 0;
-  transition: all 0.3s ease;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
 }
 
 .header-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  padding: 0 20px;
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
+  gap: 20px;
+  position: relative;
 }
 
 .header-right {
+  position: absolute;
+  right: 0;
+  top: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 15px;
-  padding: 0 20px;
+  gap: 20px;
+  z-index: 1002;
 }
 
 .logo {
-  height: 70px;
+  height: 50px;
   width: auto;
-  display: block;
-  margin: 0 auto;
+  z-index: 1001;
 }
 
-/* Main Navigation */
 .main-nav {
+  margin-top: 20px;
   width: 100%;
-  margin: 0 auto;
-  padding: 0 20px;
 }
 
 .main-nav ul {
@@ -80,9 +75,12 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
+  gap: 20px;
   justify-content: center;
-  gap: 30px;
-  position: relative;
+}
+
+.main-nav li {
+  margin: 0;
 }
 
 .main-nav a {
@@ -98,17 +96,9 @@ body {
   backdrop-filter: blur(5px);
 }
 
-/* Modern hover animation */
+/* Remove the underline animation */
 .main-nav a::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #d19a41, #f5f5f5);
-  transition: all 0.3s ease;
-  transform: translateX(-50%);
+  display: none;
 }
 
 .main-nav a:hover {
@@ -116,95 +106,6 @@ body {
   background: linear-gradient(135deg, rgba(41, 42, 70, 0.8), rgba(61, 76, 108, 0.8));
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.main-nav a:hover::after {
-  width: 80%;
-}
-
-/* Responsive adjustments */
-@media screen and (max-width: 768px) {
-  .container {
-    margin: 170px auto 20px;
-    padding: 15px 20px;
-  }
-
-  .content-container {
-    margin: 170px auto 20px;
-    padding: 20px;
-  }
-
-  .main-nav ul {
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .main-nav a {
-    width: 100%;
-    text-align: center;
-    padding: 15px;
-  }
-
-  .main-nav a::after {
-    display: none;
-  }
-
-  .main-nav a:hover {
-    transform: translateY(-2px);
-  }
-
-  .header2 {
-    flex-direction: column;
-    padding: 15px 0;
-  }
-
-  .header-content {
-    margin-bottom: 15px;
-  }
-
-  .header-right {
-    margin-top: 10px;
-    gap: 20px;
-  }
-
-  .welcome-message {
-    margin-bottom: 15px;
-  }
-
-  .auth-buttons {
-    margin-top: 15px;
-  }
-
-  .content-container {
-    margin: 220px auto 20px;
-    padding: 20px;
-  }
-}
-
-@media screen and (max-width: 480px) {
-  .container {
-    margin: 170px auto 20px;
-    padding: 15px;
-  }
-
-  .header2 {
-    padding: 10px 0;
-  }
-
-  .main-nav ul {
-    gap: 10px;
-  }
-
-  .main-nav a {
-    font-size: 1.1em;
-    padding: 8px 12px;
-  }
-
-  .content-container {
-    margin: 220px auto 20px;
-    padding: 15px;
-  }
 }
 
 /* Unified Button Styling - Applied to ALL buttons */
@@ -662,7 +563,7 @@ button:hover {
 .content-container {
   background: rgba(255, 255, 255, 0.1);
   max-width: 800px;
-  margin: 200px auto 20px;
+  margin: 20px auto;
   padding: 30px;
   border-radius: 15px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
@@ -682,7 +583,7 @@ button:hover {
 
 /* Specific styling for the meeting creator container */
 .meeting-creator-container {
-  margin: 200px auto 30px;
+  margin: 20px auto 30px;
   min-height: 60vh;
   display: flex;
   flex-direction: column;
@@ -1920,5 +1821,201 @@ input:checked + .toggle-slider:before {
 
 .welcome-message.signed-in #userName {
   display: inline-block;
+}
+
+/* --- OUTLOOK-LIKE WEEK VIEW CALENDAR --- */
+
+.calendar-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    padding: 0;
+    margin: 32px auto 0 auto;
+    max-width: 1600px;
+    width: 100%;
+    min-height: 700px;
+    overflow-x: auto;
+    min-width: 1200px;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px 32px 0 32px;
+    background: #fff;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.calendar-header h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #222;
+    margin: 0 24px;
+    flex: 1;
+    text-align: left;
+}
+
+.calendar-header button {
+    background: #e5e7eb;
+    color: #222;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 1.1em;
+    margin: 0 8px;
+    transition: background 0.2s;
+}
+.calendar-header button:hover {
+    background: #d1d5db;
+}
+
+.calendar-grid {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    background: #fff;
+    border-radius: 0 0 12px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    overflow-x: auto;
+    min-width: 1200px;
+}
+
+.time-column {
+    width: 60px;
+    background: #f7f7fa;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding-top: 44px;
+    font-size: 0.95em;
+    color: #888;
+    user-select: none;
+}
+
+.time-label {
+    height: 64px !important;
+    min-height: 64px !important;
+    padding-right: 8px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    font-size: 1.15em;
+}
+
+.weekdays {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.weekday-header {
+    flex: 1;
+    min-width: 180px;
+    padding: 12px 8px 12px 16px;
+    font-weight: 700;
+    color: #222;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    font-size: 1.15em;
+}
+
+.calendar-week {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    min-height: 900px;
+    min-width: 1200px;
+}
+
+.day-column {
+    position: relative !important;
+    overflow: visible !important;
+    flex: 1;
+    min-width: 180px;
+    border-right: 1px solid #e5e7eb;
+    position: relative;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+.day-cell {
+    height: 64px;
+    border-bottom: 1px solid #e5e7eb;
+    position: relative;
+}
+
+.event-block {
+    position: absolute !important;
+    z-index: 10 !important;
+    background: #c7eaff !important;
+    min-height: 18px;
+    height: auto !important;
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    font-size: 0.95em;
+    padding: 4px 8px;
+    left: 0px;
+    right: 0px;
+    border-radius: 8px;
+}
+.event-block .event-title {
+    font-size: 0.98em;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+.event-block .event-time {
+    font-size: 0.92em;
+    margin-top: 0;
+}
+
+@media (max-width: 1400px) {
+    .calendar-container, .calendar-grid, .calendar-week {
+        min-width: 900px;
+        max-width: 100vw;
+    }
+    .day-column, .weekday-header {
+        min-width: 120px;
+    }
+}
+@media (max-width: 600px) {
+    .calendar-header {
+        padding: 12px 6px 0 6px;
+    }
+    .calendar-container {
+        min-width: 0;
+        padding: 0;
+    }
+    .time-label, .day-cell {
+        height: 32px !important;
+        min-height: 32px !important;
+    }
+    .calendar-week, .calendar-container {
+        min-height: 400px;
+    }
+}
+
+/* --- EVENT BLOCK TEXT COLOR DARK BLUE --- */
+.event-block,
+.event-block .event-title,
+.event-block .event-time {
+    color: #183a5a !important;
 }
 

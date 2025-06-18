@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar - OneDrive App</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+    /* FullCalendar custom styles for better contrast and modern look */
+    .calendar-container {
+        max-width: 1400px;
+        margin: 32px auto 0 auto;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+        padding: 24px 24px 32px 24px;
+    }
+    #fullcalendar {
+        background: #fff;
+        border-radius: 12px;
+        color: #222;
+    }
+    .fc .fc-toolbar-title {
+        color: #222;
+        font-size: 2em;
+        font-weight: 700;
+    }
+    .fc .fc-button {
+        background: #253847;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        margin: 0 2px;
+    }
+    .fc .fc-button.fc-button-active, .fc .fc-button:focus, .fc .fc-button:hover {
+        background: #4cc9f0;
+        color: #fff;
+    }
+    .fc .fc-col-header-cell-cushion, .fc .fc-timegrid-slot-label, .fc .fc-timegrid-axis-cushion {
+        color: #183a5a !important;
+        font-weight: 600;
+        background: #f7f7fa;
+    }
+    .fc .fc-timegrid-slot-label {
+        background: #f7f7fa;
+        color: #183a5a !important;
+        font-size: 1em;
+    }
+    .fc .fc-timegrid-slot {
+        background: #fff;
+    }
+    .fc .fc-event, .fc .fc-event-title, .fc .fc-event-time {
+        color: #183a5a !important;
+        background: #e0f7fa !important;
+        border: 1px solid #4cc9f0 !important;
+        border-radius: 8px !important;
+        font-weight: 600;
+        font-size: 1em;
+        box-shadow: 0 2px 8px rgba(76,201,240,0.08);
+        white-space: normal !important;
+        word-break: break-word;
+        padding: 4px 10px;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .fc .fc-event-title {
+        white-space: normal !important;
+        word-break: break-word;
+        width: 100%;
+        text-align: center;
+    }
+    .fc .fc-event:hover {
+        background: #b2e0f7 !important;
+        color: #183a5a !important;
+    }
+    .fc .fc-daygrid-day-number {
+        color: #183a5a;
+        font-weight: 700;
+    }
+    .fc .fc-daygrid-day {
+        background: #fff;
+    }
+    .fc .fc-list-event-title, .fc .fc-list-event-time {
+        color: #183a5a !important;
+    }
+    .fc .fc-list-event:hover td {
+        background: #e0f7fa !important;
+    }
+    </style>
+</head>
+<body>
+    <header class="header2">
+        <div class="header-content">
+            <img src="/DPLOGO.png" alt="Logo" class="logo">
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="/" target="_self">Home</a></li>
+                    <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
+                    <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
+                    <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
+                </ul>
+            </nav>
+            <div class="header-right">
+                <div class="welcome-message signed-in">
+                    <span>Welcome,</span>
+                    <span id="userName"><%= user ? user.name || user.displayName || user.username : '' %></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <h2 id="currentWeek">Calendar</h2>
+        </div>
+        <div id="fullcalendar"></div>
+        <!-- Floating Add Event Button and Modal remain here for now -->
+        <button id="addEventBtn" style="position: fixed; bottom: 40px; right: 40px; z-index: 1001; background: #4cc9f0; color: #fff; border-radius: 50%; width: 60px; height: 60px; font-size: 2em; box-shadow: 0 4px 16px rgba(76,201,240,0.18); border: none; cursor: pointer;">+</button>
+        <div id="addEventModal" style="display:none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30,40,60,0.35); z-index: 2000; align-items: center; justify-content: center;">
+            <form id="addEventForm" style="background: #fff; border-radius: 16px; padding: 32px 28px; max-width: 400px; width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18); display: flex; flex-direction: column; gap: 18px; position: relative;">
+                <button type="button" id="closeAddEventModal" style="position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 1.5em; color: #888; cursor: pointer;">&times;</button>
+                <h2 style="margin: 0 0 10px 0; color: #183a5a;">Add Event</h2>
+                <label>Title <input type="text" name="title" required style="width:100%;padding:8px;"></label>
+                <label>Description <textarea name="description" rows="2" style="width:100%;padding:8px;"></textarea></label>
+                <label>Location <input type="text" name="location" style="width:100%;padding:8px;"></label>
+                <label>Start <input type="datetime-local" name="start" required style="width:100%;padding:8px;"></label>
+                <label>End <input type="datetime-local" name="end" required style="width:100%;padding:8px;"></label>
+                <label>Calendar
+                    <select name="calendar" required style="width:100%;padding:8px;">
+                        <option value="shared-staffcalendar@lawoffice.org.il">Staff Calendar</option>
+                        <option value="shared-newclients@lawoffice.org.il">New Clients</option>
+                        <option value="shared-potentialclients@lawoffice.org.il">Potential Clients</option>
+                    </select>
+                </label>
+                <button type="submit" style="background:#4cc9f0;color:#fff;padding:12px 0;border:none;border-radius:8px;font-size:1.1em;">Add Event</button>
+            </form>
+        </div>
+    </div>
+    <!-- FullCalendar CSS/JS -->
+    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/index.global.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.8/index.global.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/bootstrap5@6.1.8/index.global.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/list@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/bootstrap5@6.1.8/index.global.min.js"></script>
+
+    <script>
+    // FullCalendar initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('fullcalendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            themeSystem: 'bootstrap5',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            height: 'auto',
+            nowIndicator: true,
+            navLinks: true,
+            editable: false,
+            selectable: false,
+            eventClick: function(info) {
+                // Show event details in a modal or alert
+                alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
+            },
+            events: async function(fetchInfo, successCallback, failureCallback) {
+                try {
+                    const res = await fetch('/api/merged-calendar-events');
+                    const data = await res.json();
+                    if (data.success && Array.isArray(data.events)) {
+                        // Map backend events to FullCalendar format
+                        const fcEvents = data.events.map(ev => {
+                            let start = typeof ev.start === 'string' ? ev.start : (ev.start?.dateTime || '');
+                            let end = typeof ev.end === 'string' ? ev.end : (ev.end?.dateTime || '');
+                            return {
+                                id: ev.id,
+                                title: ev.subject || 'No Title',
+                                start: start,
+                                end: end,
+                                description: ev.body?.content || '',
+                                location: ev.location?.displayName || '',
+                                calendar: ev.calendar,
+                                allDay: false
+                            };
+                        });
+                        successCallback(fcEvents);
+                    } else {
+                        failureCallback('Failed to load events');
+                    }
+                } catch (err) {
+                    failureCallback(err);
+                }
+            },
+            eventContent: function(arg) {
+                // Only show the title
+                return { html: `<div class='fc-event-title'>${arg.event.title}</div>` };
+            },
+            eventDidMount: function(info) {
+                // Add tooltip with the time
+                let start = info.event.start;
+                let end = info.event.end;
+                let timeStr = '';
+                if (start && end) {
+                    timeStr = `${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                } else if (start) {
+                    timeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+                info.el.title = timeStr;
+            }
+        });
+        calendar.render();
+    });
+
+    // Add Event Modal Logic
+    const addEventBtn = document.getElementById('addEventBtn');
+    const addEventModal = document.getElementById('addEventModal');
+    const closeAddEventModal = document.getElementById('closeAddEventModal');
+    const addEventForm = document.getElementById('addEventForm');
+    addEventBtn.onclick = () => { addEventModal.style.display = 'flex'; };
+    closeAddEventModal.onclick = () => { addEventModal.style.display = 'none'; };
+    addEventModal.onclick = (e) => { if (e.target === addEventModal) addEventModal.style.display = 'none'; };
+    addEventForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(addEventForm);
+        const data = Object.fromEntries(formData.entries());
+        try {
+            const res = await fetch('/api/calendar/add-event', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.success) {
+                addEventModal.style.display = 'none';
+                addEventForm.reset();
+                await mainCalendarInit(); // Refresh events
+            } else {
+                alert('Failed to add event: ' + (result.error || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Error adding event: ' + err.message);
+        }
+    };
+    </script>
+</body>
+</html> 

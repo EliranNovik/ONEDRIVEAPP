@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const axios = require('axios');
 const app = express();
 
 // Enhanced logging configuration
@@ -35,11 +36,17 @@ app.set("views", path.join(__dirname, "views"));
 // Middleware to parse JSON request bodies
 app.use(express.json());
 
-// Configure session middleware – change the secret for production use
+// Configure session middleware
 app.use(session({
-  secret: 'your-secret-key',
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: true,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // Only send cookies over HTTPS in production
+    httpOnly: true, // Prevents client-side access to the cookie
+    sameSite: 'lax', // Protects against CSRF
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 
 // Serve static files from the "public" folder
@@ -104,7 +111,6 @@ app.get("/get-token", (req, res) => {
   res.json({ token: req.session.accessToken || null });
 });
 
-
 // Mount teams routes at /teams (must come after session middleware)
 const teamsRoutes = require("./routes/teamsRoutes.js");
 const chatRoutes = require("./routes/chatRoutes.js");
@@ -123,6 +129,119 @@ app.use("/chat", chatRoutes); // Chat view routes
 // Add route to serve chat.html for any chat ID
 app.get('/chat/:chatId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'chat.html'));
+});
+
+// Calendar route
+app.get('/calendar', (req, res) => {
+    res.render('calendar', {
+        title: 'Calendar',
+        user: req.session.user || null
+    });
+});
+
+// API route to fetch and merge events from all three shared calendars
+app.get('/api/merged-calendar-events', async (req, res) => {
+  if (!req.session || !req.session.accessToken) {
+    return res.status(401).json({ success: false, error: 'Not authenticated' });
+  }
+
+  const accessToken = req.session.accessToken;
+  const calendarEmails = [
+    'shared-staffcalendar@lawoffice.org.il',
+    'shared-newclients@lawoffice.org.il',
+    'shared-potentialclients@lawoffice.org.il'
+  ];
+
+  try {
+    // Fetch events from all calendars in parallel, catching errors for each
+    const eventPromises = calendarEmails.map(email =>
+      axios.get(`https://graph.microsoft.com/v1.0/users/${email}/calendar/events`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }).catch(error => ({ error, email }))
+    );
+    const results = await Promise.all(eventPromises);
+
+    // Check for errors in any result
+    const errors = results.filter(r => r.error);
+    if (errors.length > 0) {
+      console.error('Calendar fetch errors:', errors.map(e => ({
+        email: e.email,
+        message: e.error?.response?.data || e.error?.message
+      })));
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch one or more calendars',
+        details: errors.map(e => ({
+          email: e.email,
+          message: e.error?.response?.data || e.error?.message
+        }))
+      });
+    }
+
+    // Merge all events into one array
+    const mergedEvents = results.flatMap(r => r.data.value.map(ev => ({ ...ev, calendar: r.config.url.split('/')[5] })));
+    res.json({ success: true, events: mergedEvents });
+  } catch (err) {
+    console.error('Error fetching calendar events:', err.response?.data || err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch calendar events', details: err.response?.data || err.message });
+  }
+});
+
+// Add event to selected shared calendar
+app.post('/api/calendar/add-event', async (req, res) => {
+  if (!req.session || !req.session.accessToken) {
+    return res.status(401).json({ success: false, error: 'Not authenticated' });
+  }
+  const accessToken = req.session.accessToken;
+  const { title, description, location, start, end, calendar } = req.body;
+  if (!title || !start || !end || !calendar) {
+    return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+  try {
+    const event = {
+      subject: title,
+      body: {
+        contentType: 'HTML',
+        content: description || ''
+      },
+      start: {
+        dateTime: new Date(start).toISOString(),
+        timeZone: 'UTC'
+      },
+      end: {
+        dateTime: new Date(end).toISOString(),
+        timeZone: 'UTC'
+      },
+      location: {
+        displayName: location || ''
+      }
+    };
+    const url = `https://graph.microsoft.com/v1.0/users/${calendar}/calendar/events`;
+    const response = await axios.post(url, event, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    res.json({ success: true, event: response.data });
+  } catch (err) {
+    console.error('Error creating event:', err.response?.data || err.message);
+    res.status(500).json({ success: false, error: 'Failed to create event', details: err.response?.data || err.message });
+  }
+});
+
+// Handle MSAL redirect
+app.get('/onedriveapp', (req, res) => {
+  // If there's an error during authentication
+  if (req.query.error) {
+    return res.redirect('/?error=' + encodeURIComponent(req.query.error_description || 'Authentication failed'));
+  }
+  
+  // If this is the auth callback with a code
+  if (req.query.code) {
+    // Store the code in session temporarily if needed
+    req.session.authCode = req.query.code;
+  }
+  
+  // Always serve the main page
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Add error handling middleware

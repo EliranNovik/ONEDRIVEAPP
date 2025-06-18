@@ -13,7 +13,9 @@ const msalConfig = {
   auth: {
     clientId: 'e03ab8e9-4eb4-4bbc-8c6d-805021e089cd',
     authority: 'https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84',
-    redirectUri: 'http://localhost:3000/teams/auth/callback'
+    redirectUri: process.env.NODE_ENV === 'production' 
+      ? 'https://onedriveapp.onrender.com/teams/auth/callback'
+      : 'http://localhost:3000/teams/auth/callback'
   }
 };
 

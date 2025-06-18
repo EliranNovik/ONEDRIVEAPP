@@ -20,6 +20,7 @@
       <nav class="main-nav">
       <ul>
         <li><a href="/" target="_self">Home</a></li>
+        <!-- <li><a href="/calendar"><i class="fas fa-calendar"></i> Calendar</a></li> -->
         <li><a href="https://rainmakerqueen.com/" target="_blank">Rainmaker Home Page</a></li>
         <li><a href="https://rainmakerqueen.com/#expert" target="_blank">Expert Pipeline</a></li>
         <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
@@ -547,11 +548,26 @@
         const topic = document.getElementById("topic").value;
         const dateTime = document.getElementById("dateTime").value;
         
-        const meetingDate = new Date(dateTime).toLocaleDateString();
-        const meetingTime = new Date(dateTime).toLocaleTimeString();
+        // Format the date and time properly
+        const meetingDateTime = new Date(dateTime);
+        const meetingDate = meetingDateTime.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        const meetingTime = meetingDateTime.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
 
         try {
-          console.log('Sending email request...');
+          console.log('Sending email request with datetime:', {
+            originalDateTime: dateTime,
+            formattedDate: meetingDate,
+            formattedTime: meetingTime
+          });
+          
           const response = await fetch("/teams/send-email", {
             method: "POST",
             headers: { 
