@@ -270,16 +270,60 @@ router.post("/create-meeting", checkAuth, async (req, res) => {
 
 // Function to read and process email template
 const getEmailTemplate = (language, data) => {
+  console.log('=== EMAIL TEMPLATE PROCESSING START ===');
+  console.log('Language:', language);
+  console.log('Data passed to getEmailTemplate:', JSON.stringify(data, null, 2));
+  
   const templatePath = path.join(__dirname, '../public/email-templates', `${language}.html`);
-  let template = fs.readFileSync(templatePath, 'utf8');
+  console.log('Template path:', templatePath);
+  
+  let template;
+  try {
+    template = fs.readFileSync(templatePath, 'utf8');
+    console.log('Template loaded successfully, length:', template.length);
+  } catch (error) {
+    console.error('Error reading template file:', error);
+    return 'Error loading email template';
+  }
+  
+  console.log('Template data received in getEmailTemplate:', data);
+  console.log('Individual values:', {
+    recipientName: data.recipientName,
+    meetingTopic: data.meetingTopic,
+    meetingDate: data.meetingDate,
+    meetingTime: data.meetingTime,
+    meetingLink: data.meetingLink
+  });
+  
+  // Check for undefined values specifically
+  Object.keys(data).forEach(key => {
+    if (data[key] === undefined) {
+      console.error(`WARNING: ${key} is undefined!`);
+    }
+  });
+  
+  // Ensure we have values to replace with
+  const replacements = {
+    '[Recipient Name]': data.recipientName || 'Valued Client',
+    '[Meeting Topic]': data.meetingTopic || 'Meeting',
+    '[Meeting Date]': data.meetingDate || 'TBD',
+    '[Meeting Time]': data.meetingTime || 'TBD',
+    '[Meeting Link]': data.meetingLink || '#'
+  };
+  
+  console.log('Replacements to be made:', replacements);
   
   // Replace placeholders with actual data
-  template = template
-    .replace(/\[Recipient Name\]/g, data.recipientName || '')
-    .replace(/\[Meeting Topic\]/g, data.meetingTopic)
-    .replace(/\[Meeting Date\]/g, data.meetingDate)
-    .replace(/\[Meeting Time\]/g, data.meetingTime)
-    .replace(/\[Meeting Link\]/g, data.meetingLink);
+  for (const [placeholder, value] of Object.entries(replacements)) {
+    const regex = new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    const beforeCount = (template.match(regex) || []).length;
+    template = template.replace(regex, value);
+    const afterCount = (template.match(regex) || []).length;
+    console.log(`Placeholder '${placeholder}': found ${beforeCount} instances, replaced ${beforeCount - afterCount}, value: '${value}'`);
+  }
+  
+  console.log('Template after replacements (first 500 chars):', template.substring(0, 500));
+  console.log('=== EMAIL TEMPLATE PROCESSING END ===');
   
   return template;
 };
@@ -303,29 +347,109 @@ router.post("/send-email", checkAuth, async (req, res) => {
       recipientEmail,
       recipientName,
       meetingTopic,
-      meetingDate,
-      meetingTime,
+      meetingDateTime,
       meetingLink,
       language
     } = req.body;
 
     console.log('Validating required fields...');
-    if (!recipientEmail || !meetingTopic || !meetingLink) {
-      console.log('Missing required fields:', { recipientEmail, meetingTopic, meetingLink });
+    if (!recipientEmail || !meetingTopic || !meetingLink || !meetingDateTime) {
+      console.log('Missing required fields:', { recipientEmail, meetingTopic, meetingLink, meetingDateTime });
       return res.status(400).json({ 
         success: false, 
         error: "Missing required fields" 
       });
     }
 
+    // Format the date and time exactly the same way as meeting creation
+    // This ensures consistency between the meeting time and email template
+    console.log('=== EMAIL DATE PROCESSING START ===');
+    console.log('Original meeting datetime received:', meetingDateTime, typeof meetingDateTime);
+    
+    // Handle different possible formats
+    let meetingDate;
+    if (meetingDateTime.includes('T')) {
+      // Format: "2025-07-22T23:00" - this is what we expect
+      meetingDate = new Date(meetingDateTime);
+    } else {
+      // Fallback for other formats
+      meetingDate = new Date(meetingDateTime);
+    }
+    
+    console.log('Parsed meeting date object:', meetingDate);
+    console.log('Is valid date:', !isNaN(meetingDate.getTime()));
+    console.log('Date toString():', meetingDate.toString());
+    console.log('Date toISOString():', meetingDate.toISOString());
+    
+    // Check if the date is valid
+    if (isNaN(meetingDate.getTime())) {
+      console.error('Invalid date provided:', meetingDateTime);
+      return res.status(400).json({ 
+        success: false, 
+        error: "Invalid date format provided" 
+      });
+    }
+    
+    // Extract date and time components manually to avoid timezone conversion
+    const year = meetingDate.getFullYear();
+    const month = meetingDate.getMonth();
+    const day = meetingDate.getDate();
+    const hours = meetingDate.getHours();
+    const minutes = meetingDate.getMinutes();
+    
+    console.log('Extracted components:', { year, month, day, hours, minutes });
+    
+    // Validate extracted components
+    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes)) {
+      console.error('ERROR: Invalid date components extracted!', { year, month, day, hours, minutes });
+      return res.status(400).json({ 
+        success: false, 
+        error: "Invalid date components extracted from provided datetime" 
+      });
+    }
+    
+    // Format date
+    const monthNames = ["January", "February", "March", "April", "May", "June", 
+                       "July", "August", "September", "October", "November", "December"];
+    const formattedDate = `${monthNames[month]} ${day}, ${year}`;
+    
+    // Format time in 12-hour format
+    let displayHours = hours;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    if (displayHours === 0) displayHours = 12;
+    if (displayHours > 12) displayHours = hours - 12;
+    const formattedTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+
+    console.log('=== FINAL FORMATTED VALUES ===');
+    console.log('Formatted date:', formattedDate);
+    console.log('Formatted time:', formattedTime);
+    console.log('Original datetime:', meetingDateTime);
+    console.log('=== END EMAIL DATE PROCESSING ===');
+
     // Get the appropriate email template
-    const emailContent = getEmailTemplate(language, {
+    const templateData = {
       recipientName,
       meetingTopic,
-      meetingDate,
-      meetingTime,
+      meetingDate: formattedDate,
+      meetingTime: formattedTime,
       meetingLink
-    });
+    };
+    
+    console.log('Template data being passed:', templateData);
+    
+    const emailContent = getEmailTemplate(language, templateData);
+    
+    // Debug: Log the actual email content to see if placeholders were replaced
+    console.log('Final email content (first 1000 chars):', emailContent.substring(0, 1000));
+    console.log('Checking for remaining placeholders in email content:');
+    console.log('Contains [Meeting Date]:', emailContent.includes('[Meeting Date]'));
+    console.log('Contains [Meeting Time]:', emailContent.includes('[Meeting Time]'));
+    console.log('Contains [Recipient Name]:', emailContent.includes('[Recipient Name]'));
+    
+    // Log the COMPLETE email content to verify
+    console.log('=== COMPLETE EMAIL CONTENT ===');
+    console.log(emailContent);
+    console.log('=== END COMPLETE EMAIL CONTENT ===');
 
     console.log('Sending email via Microsoft Graph API...');
     const response = await axios.post(

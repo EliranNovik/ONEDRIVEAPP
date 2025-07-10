@@ -40,13 +40,13 @@ app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production', // Only send cookies over HTTPS in production
     httpOnly: true, // Prevents client-side access to the cookie
-    sameSite: 'lax', // Protects against CSRF
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site cookies in production
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    domain: process.env.NODE_ENV === 'production' ? 'onedriveapp.onrender.com' : undefined // Fix domain for production
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined // Use domain for production with dot prefix
   },
   name: 'sessionId', // Set a specific name for the session cookie
   proxy: process.env.NODE_ENV === 'production' // Trust the reverse proxy when in production
@@ -148,6 +148,7 @@ app.get("/get-token", (req, res) => {
 // Mount teams routes at /teams (must come after session middleware)
 const teamsRoutes = require("./routes/teamsRoutes.js");
 const chatRoutes = require("./routes/chatRoutes.js");
+const claudeRoutes = require("./routes/claudeRoutes.js");
 
 // Add logging middleware
 app.use((req, res, next) => {
@@ -159,10 +160,16 @@ app.use((req, res, next) => {
 app.use("/teams", teamsRoutes);
 app.use("/api", chatRoutes); // API routes
 app.use("/chat", chatRoutes); // Chat view routes
+app.use("/api/claude", claudeRoutes); // Claude AI routes
 
 // Add route to serve chat.html for any chat ID
 app.get('/chat/:chatId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'chat.html'));
+});
+
+// Add route to serve Claude AI interface
+app.get('/claude', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'claude.html'));
 });
 
 // Calendar route

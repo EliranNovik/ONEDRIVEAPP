@@ -6,6 +6,7 @@
   <title>OneDrive Uploader</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js"></script>
+  <script src="auth-config.js"></script>
   <!-- Add Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Add SweetAlert2 -->
@@ -182,6 +183,7 @@
           <li><a href="https://lawdecker-my.sharepoint.com" target="_blank">My OneDrive</a></li>
           <li><a href="/teams" id="create-meeting-link">Create a Meeting</a></li>
           <li><a href="/chat.html">Team Chat</a></li>
+         <!-- <li><a href="/claude"><i class="fas fa-robot"></i> Claude AI</a></li> -->
           <!-- <li><a href="/calendar"></i> Calendar</a></li> -->
         </ul>
       </nav>
@@ -193,6 +195,7 @@
       </div>
       <div class="auth-buttons">
         <button id="signin-button">Sign In</button>
+        <button id="signout-button" style="display: none;">Sign Out</button>
       </div>
     </div>
   </header>
@@ -241,19 +244,62 @@
       }
     });
 
-    // Check sign-in state and update welcome message on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      // Check MSAL accounts first
-      const accounts = msalInstance.getAllAccounts();
-      if (accounts.length > 0) {
-        const account = accounts[0];
-        msalInstance.setActiveAccount(account);
-        updateWelcomeMessage(account.name);
-        document.getElementById('signin-button').style.display = 'none';
+    // Initialize authentication on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        const authResult = await window.AuthConfig.initialize();
+        
+        if (authResult.authenticated) {
+          console.log('User is authenticated:', authResult.account.username);
+          if (window.Toast) {
+            window.Toast.fire({
+              icon: 'success',
+              title: `Welcome back, ${authResult.account.name}!`
+            });
+          }
+        } else {
+          console.log('User is not authenticated');
+        }
+      } catch (error) {
+        console.error('Authentication initialization error:', error);
       }
-
-      // Handle any redirect response
-      handleRedirectPromise();
+      
+      // Set up sign in button
+      const signinButton = document.getElementById('signin-button');
+      if (signinButton) {
+        signinButton.onclick = async function() {
+          try {
+            await window.AuthConfig.signIn();
+            const authResult = await window.AuthConfig.initialize();
+            if (authResult.authenticated && window.Toast) {
+              window.Toast.fire({
+                icon: 'success',
+                title: `Welcome, ${authResult.account.name}!`
+              });
+            }
+          } catch (error) {
+            console.error('Sign in error:', error);
+            if (window.Toast) {
+              window.Toast.fire({
+                icon: 'error',
+                title: 'Sign in failed. Please try again.'
+              });
+            }
+          }
+        };
+      }
+      
+      // Set up sign out button
+      const signoutButton = document.getElementById('signout-button');
+      if (signoutButton) {
+        signoutButton.onclick = async function() {
+          try {
+            await window.AuthConfig.signOut();
+          } catch (error) {
+            console.error('Sign out error:', error);
+          }
+        };
+      }
     });
 
     // Only run menu-related code if the menu exists

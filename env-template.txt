@@ -1,0 +1,18 @@
+# Environment Variables Configuration
+# Copy this content to a .env file and fill in your actual values
+
+# Session Configuration
+SESSION_SECRET=your-random-session-secret-here
+
+# Environment (development or production)
+NODE_ENV=production
+
+# Claude AI Configuration (Optional - only if using Claude AI features)
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+
+# Microsoft Azure Configuration (Already configured in your code)
+# CLIENT_ID=e03ab8e9-4eb4-4bbc-8c6d-805021e089cd
+# TENANT_ID=899fa835-174e-49e1-93a3-292318f5ee84
+
+# Deployment URL (Automatically set by Render)
+# RENDER_EXTERNAL_URL=https://onedriveapp.onrender.com 

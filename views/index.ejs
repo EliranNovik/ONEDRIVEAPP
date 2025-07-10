@@ -9,6 +9,8 @@
   <!-- Add SweetAlert2 -->
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js"></script>
+  <script src="/auth-config.js"></script>
 </head>
 <body>
   <!-- Header with Navigation -->
@@ -42,44 +44,15 @@
         // Check for existing authentication on page load
         document.addEventListener('DOMContentLoaded', async function() {
           try {
-            // First check MSAL accounts
-            const accounts = msalInstance.getAllAccounts();
-            if (accounts.length > 0) {
-              currentAccount = accounts[0];
-              msalInstance.setActiveAccount(currentAccount);
-              
-              // Try to acquire token silently
-              const tokenResponse = await msalInstance.acquireTokenSilent({
-                scopes: graphScopes,
-                account: currentAccount
-              });
-
-              // Save token to session
-              await fetch('/set-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  token: tokenResponse.accessToken,
-                  user: {
-                    id: currentAccount.homeAccountId,
-                    name: currentAccount.name,
-                    username: currentAccount.username,
-                    displayName: currentAccount.name
-                  }
-                })
-              });
-
-              // Reload page to show meeting form
-              window.location.reload();
-            }
-
-            // If no MSAL account, check server session
-            const response = await fetch('/get-token');
-            const data = await response.json();
+            const authResult = await window.AuthConfig.initialize();
             
-            if (data.token) {
-              // We have a valid token, reload the page to show the meeting form
+            if (authResult.authenticated) {
+              // We have authentication, reload the page to show the meeting form
               window.location.reload();
+            } else {
+              // No authentication, show login link
+              document.getElementById('auth-check-loading')?.style.display = 'none';
+              document.getElementById('auth-check-failed')?.style.display = 'block';
             }
           } catch (error) {
             console.error('Error checking authentication:', error);
@@ -207,26 +180,7 @@
   </div>
   
   <!-- Inline Script for Hamburger Menu and Modal -->
-  <script src="https://alcdn.msauth.net/browser/2.28.1/js/msal-browser.min.js"></script>
   <script>
-    // MSAL configuration
-    const msalConfig = {
-      auth: {
-        clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",
-        authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
-        redirectUri: window.location.hostname === "localhost" 
-          ? "http://localhost:3000/onedriveapp"
-          : "https://onedriveapp.onrender.com/onedriveapp",
-        navigateToLoginRequestUrl: true
-      },
-      cache: {
-        cacheLocation: "localStorage",
-        storeAuthStateInCookie: true
-      }
-    };
-
-    const msalInstance = new msal.PublicClientApplication(msalConfig);
-    const graphScopes = ["User.Read", "OnlineMeetings.ReadWrite", "Calendars.ReadWrite"];
     let currentAccount = null;
 
     // Toggle hamburger menu visibility
@@ -284,7 +238,24 @@
           !prevMonthBtn || !nextMonthBtn || !calendar || !hourInput || !minuteInput || 
           !decreaseHourBtn || !increaseHourBtn || !decreaseMinuteBtn || !increaseMinuteBtn || 
           !cancelBtn || !applyBtn || !dateTimeInput) {
-        console.error("Required calendar elements are missing");
+        console.error("Required calendar elements are missing", {
+          datetimeTrigger: !!datetimeTrigger,
+          datetimeDropdown: !!datetimeDropdown,
+          selectedDatetime: !!selectedDatetime,
+          currentMonth: !!currentMonth,
+          prevMonthBtn: !!prevMonthBtn,
+          nextMonthBtn: !!nextMonthBtn,
+          calendar: !!calendar,
+          hourInput: !!hourInput,
+          minuteInput: !!minuteInput,
+          decreaseHourBtn: !!decreaseHourBtn,
+          increaseHourBtn: !!increaseHourBtn,
+          decreaseMinuteBtn: !!decreaseMinuteBtn,
+          increaseMinuteBtn: !!increaseMinuteBtn,
+          cancelBtn: !!cancelBtn,
+          applyBtn: !!applyBtn,
+          dateTimeInput: !!dateTimeInput
+        });
         return;
       }
       
@@ -293,6 +264,10 @@
       let selectedDate = new Date();
       let selectedHour = 12;
       let selectedMinute = 0;
+      
+      // Set initial values in the hour and minute inputs
+      hourInput.value = selectedHour.toString().padStart(2, "0");
+      minuteInput.value = selectedMinute.toString().padStart(2, "0");
       
       // Initialize calendar
       function initializeCalendar() {
@@ -368,6 +343,58 @@
       // Initialize the calendar on page load
       initializeCalendar();
       
+      // Set a default date and time (today at current hour + 1)
+      const now = new Date();
+      const defaultDate = new Date();
+      defaultDate.setHours(now.getHours() + 1, 0, 0, 0); // Next hour, round to :00
+      
+      // Set default values
+      selectedDate = new Date(defaultDate);
+      selectedHour = defaultDate.getHours();
+      selectedMinute = defaultDate.getMinutes();
+      
+      // Update input fields
+      hourInput.value = selectedHour.toString().padStart(2, "0");
+      minuteInput.value = selectedMinute.toString().padStart(2, "0");
+      
+      // Set the hidden input with default value
+      const defaultFormatted = defaultDate.getFullYear() + '-' +
+        String(defaultDate.getMonth() + 1).padStart(2, '0') + '-' +
+        String(defaultDate.getDate()).padStart(2, '0') + 'T' +
+        String(defaultDate.getHours()).padStart(2, '0') + ':' +
+        String(defaultDate.getMinutes()).padStart(2, '0');
+      
+      dateTimeInput.value = defaultFormatted;
+      
+      // Update the display with default
+      const monthNames = ["January", "February", "March", "April", "May", "June", 
+                         "July", "August", "September", "October", "November", "December"];
+      const displayMonth = monthNames[defaultDate.getMonth()];
+      const displayTime = `${selectedHour.toString().padStart(2, "0")}:${selectedMinute.toString().padStart(2, "0")}`;
+      selectedDatetime.textContent = `${displayMonth} ${defaultDate.getDate()}, ${defaultDate.getFullYear()} at ${displayTime}`;
+      
+      // Update calendar to show selected day
+      initializeCalendar();
+      
+      console.log('Default date/time set:', {
+        defaultDate,
+        selectedHour,
+        selectedMinute,
+        defaultFormatted,
+        displayText: selectedDatetime.textContent,
+        dateTimeInputValue: dateTimeInput.value,
+        hourInputValue: hourInput.value,
+        minuteInputValue: minuteInput.value
+      });
+      
+      // Add a test to verify the dateTime input has a value
+      setTimeout(() => {
+        console.log('After timeout - dateTime input value:', dateTimeInput.value);
+        if (!dateTimeInput.value) {
+          console.error('ERROR: dateTime input is still empty after setting default!');
+        }
+      }, 1000);
+      
       // Toggle dropdown
       datetimeTrigger.addEventListener("click", function(e) {
         e.stopPropagation();
@@ -432,6 +459,21 @@
         selectedMinute = minute;
       });
       
+      // Handle direct input changes for hour and minute
+      hourInput.addEventListener("input", function() {
+        let hour = parseInt(this.value);
+        if (!isNaN(hour) && hour >= 0 && hour <= 23) {
+          selectedHour = hour;
+        }
+      });
+      
+      minuteInput.addEventListener("input", function() {
+        let minute = parseInt(this.value);
+        if (!isNaN(minute) && minute >= 0 && minute <= 59) {
+          selectedMinute = minute;
+        }
+      });
+      
       // Quick date options
       quickDateOptions.forEach(option => {
         option.addEventListener("click", function(e) {
@@ -472,14 +514,31 @@
         const month = monthNames[selectedDate.getMonth()];
         const year = selectedDate.getFullYear();
         
-        // Update the hidden input with ISO format
-        const isoDate = new Date(selectedDate);
-        isoDate.setHours(selectedHour, selectedMinute, 0, 0);
-        dateTimeInput.value = isoDate.toISOString().slice(0, 16);
+        // Create the datetime value using local time (not UTC)
+        // This ensures the exact time picked by the user is preserved
+        const pickedDateTime = new Date(selectedDate);
+        pickedDateTime.setHours(selectedHour, selectedMinute, 0, 0);
+        
+        // Format as YYYY-MM-DDTHH:MM for the datetime-local input
+        const formattedForInput = pickedDateTime.getFullYear() + '-' +
+          String(pickedDateTime.getMonth() + 1).padStart(2, '0') + '-' +
+          String(pickedDateTime.getDate()).padStart(2, '0') + 'T' +
+          String(pickedDateTime.getHours()).padStart(2, '0') + ':' +
+          String(pickedDateTime.getMinutes()).padStart(2, '0');
+        
+        dateTimeInput.value = formattedForInput;
         
         // Update the display
         const formattedTime = `${selectedHour.toString().padStart(2, "0")}:${selectedMinute.toString().padStart(2, "0")}`;
         selectedDatetime.textContent = `${month} ${day}, ${year} at ${formattedTime}`;
+        
+        console.log('Date picker applied:', {
+          selectedDate: selectedDate,
+          selectedHour: selectedHour,
+          selectedMinute: selectedMinute,
+          formattedForInput: formattedForInput,
+          pickedDateTime: pickedDateTime
+        });
         
         // Close the dropdown
         datetimeDropdown.classList.remove("active");
@@ -558,13 +617,15 @@
         }
       });
 
-      // Email Modal Functionality
-      const templateModal = document.getElementById("templateModal");
-      const emailModal = document.getElementById("emailModal");
-      const emailButton = document.getElementById("emailButton");
-      const closeButtons = document.querySelectorAll(".close");
-      const emailForm = document.getElementById("emailForm");
-      const templateOptions = document.querySelectorAll(".template-option");
+      // Initialize email functionality after date picker is set up
+      function initializeEmailFunctionality() {
+        // Email Modal Functionality
+        const templateModal = document.getElementById("templateModal");
+        const emailModal = document.getElementById("emailModal");
+        const emailButton = document.getElementById("emailButton");
+        const closeButtons = document.querySelectorAll(".close");
+        const emailForm = document.getElementById("emailForm");
+        const templateOptions = document.querySelectorAll(".template-option");
 
       // Show template selection modal when clicking email button
       emailButton.onclick = function() {
@@ -610,41 +671,70 @@
         const topic = document.getElementById("topic").value;
         const dateTime = document.getElementById("dateTime").value;
         
-        // Format the date and time properly
-        const meetingDateTime = new Date(dateTime);
-        const meetingDate = meetingDateTime.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-        const meetingTime = meetingDateTime.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
+        // Check if dateTime is empty or invalid
+        if (!dateTime) {
+          console.error('No dateTime value found in input!');
+          
+          // As a fallback, try to create a default datetime (next hour)
+          const fallbackDate = new Date();
+          fallbackDate.setHours(fallbackDate.getHours() + 1, 0, 0, 0);
+          const fallbackFormatted = fallbackDate.getFullYear() + '-' +
+            String(fallbackDate.getMonth() + 1).padStart(2, '0') + '-' +
+            String(fallbackDate.getDate()).padStart(2, '0') + 'T' +
+            String(fallbackDate.getHours()).padStart(2, '0') + ':' +
+            String(fallbackDate.getMinutes()).padStart(2, '0');
+          
+          console.log('Using fallback datetime:', fallbackFormatted);
+          
+          // Update the dateTime variable and the input
+          document.getElementById("dateTime").value = fallbackFormatted;
+          const updatedDateTime = document.getElementById("dateTime").value;
+          
+          if (!updatedDateTime) {
+            Toast.fire({
+              icon: 'error',
+              title: 'Please select a date and time first!'
+            });
+            return;
+          }
+          
+          // Update the dateTime variable for the request
+          dateTime = updatedDateTime;
+          console.log('Updated dateTime to:', dateTime);
+        }
+        
+        // Send the raw dateTime value to the backend for proper formatting
+        // This ensures the backend uses the exact same date/time as the meeting creation
+        console.log('Email form data before sending:', {
+          recipientEmail,
+          recipientName,
+          meetingTopic: topic,
+          meetingDateTime: dateTime,
+          meetingLink,
+          language: template,
+          dateTimeType: typeof dateTime,
+          dateTimeValue: dateTime
         });
 
         try {
-          console.log('Sending email request with datetime:', {
-            originalDateTime: dateTime,
-            formattedDate: meetingDate,
-            formattedTime: meetingTime
-          });
+          const requestBody = {
+            recipientEmail,
+            recipientName,
+            meetingTopic: topic,
+            meetingDateTime: dateTime, // Send raw datetime for backend formatting
+            meetingLink,
+            language: template
+          };
           
+          console.log('Request body being sent:', requestBody);
+
           const response = await fetch("/teams/send-email", {
             method: "POST",
             headers: { 
               "Content-Type": "application/json",
               "Accept": "application/json"
             },
-            body: JSON.stringify({
-              recipientEmail,
-              recipientName,
-              meetingTopic: topic,
-              meetingDate,
-              meetingTime,
-              meetingLink,
-              language: template
-            })
+            body: JSON.stringify(requestBody)
           });
 
           console.log('Response status:', response.status);
@@ -680,6 +770,19 @@
           });
         }
       };
+      }
+      
+      // Call the email initialization function
+      initializeEmailFunctionality();
+      
+      // Add debugging helper - check dateTime value every 5 seconds
+      setInterval(() => {
+        const currentValue = document.getElementById("dateTime").value;
+        console.log('Current dateTime value:', currentValue);
+        if (!currentValue) {
+          console.warn('WARNING: dateTime input is empty!');
+        }
+      }, 5000);
     });
   </script>
 

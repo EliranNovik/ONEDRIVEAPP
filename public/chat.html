@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js"></script>
+  <script src="auth-config.js"></script>
   <script>
     // Add error handling for script loading
     window.onerror = function(msg, url, lineNo, columnNo, error) {
@@ -14,142 +15,49 @@
       return false;
     };
 
-    // MSAL configuration
-    const msalConfig = {
-      auth: {
-        clientId: "e03ab8e9-4eb4-4bbc-8c6d-805021e089cd",
-        authority: "https://login.microsoftonline.com/899fa835-174e-49e1-93a3-292318f5ee84",
-        redirectUri: window.location.hostname === "localhost" 
-          ? "http://localhost:3000/chat.html"
-          : "https://onedriveapp.onrender.com/chat.html",
-        navigateToLoginRequestUrl: true
-      },
-      cache: {
-        cacheLocation: "localStorage",
-        storeAuthStateInCookie: true
-      }
-    };
-
-    const msalInstance = new msal.PublicClientApplication(msalConfig);
     let currentChatId = null;
 
-    // Initialize MSAL and handle redirect response
+    // Initialize authentication and handle redirect response
     async function initialize() {
       try {
-        console.log('Initializing MSAL...');
-        await msalInstance.handleRedirectPromise();
-        console.log('Redirect handled successfully');
+        console.log('Initializing chat authentication...');
         
-        const accounts = msalInstance.getAllAccounts();
-        console.log('Available accounts:', accounts);
+        const authResult = await window.AuthConfig.initialize();
         
-        if (accounts.length === 0) {
-          console.log('No accounts found, initiating login...');
-          await msalInstance.loginRedirect({
-            scopes: [
-              'User.Read',
-              'User.ReadBasic.All',
-              'People.Read',
-              'Contacts.Read',
-              'Chat.Read',
-              'Chat.ReadWrite',
-              'Chat.Create'
-            ]
-          });
-        } else {
-          console.log('Account found, loading contacts...');
+        if (authResult.authenticated) {
+          console.log('User authenticated, loading contacts...');
           await loadContacts();
+        } else {
+          console.log('User not authenticated, redirecting to login...');
+          // Redirect to main page for authentication
+          window.location.href = '/';
         }
       } catch (error) {
         console.error('Initialization error:', error);
-        if (error instanceof msal.InteractionRequiredAuthError) {
-          console.log('Consent required, redirecting to login...');
-          await msalInstance.loginRedirect({
-            scopes: [
-              'User.Read',
-              'User.ReadBasic.All',
-              'People.Read',
-              'Contacts.Read',
-              'Chat.Read',
-              'Chat.ReadWrite',
-              'Chat.Create'
-            ]
-          });
-        }
+        window.location.href = '/';
       }
     }
 
     // Load contacts from Microsoft Graph
     async function loadContacts() {
       try {
-        const accounts = msalInstance.getAllAccounts();
-        if (accounts.length === 0) {
-          throw new Error('No accounts found. Please sign in.');
+        console.log('Fetching contacts...');
+        const contactsResponse = await fetch('/api/contacts');
+        if (!contactsResponse.ok) {
+          const errorData = await contactsResponse.json();
+          throw new Error(errorData.error || 'Failed to fetch contacts');
         }
 
-        console.log('Acquiring token silently...');
-        const tokenResponse = await msalInstance.acquireTokenSilent({
-          scopes: ['User.Read', 'Chat.Read', 'Chat.ReadWrite', 'Contacts.Read'],
-          account: accounts[0]
-        });
-
-        console.log('Token acquired successfully');
-        
-        // Store token and user info in session
-        try {
-          const storeTokenResponse = await fetch('/set-token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              token: tokenResponse.accessToken,
-              user: {
-                id: accounts[0].homeAccountId,
-                name: accounts[0].name,
-                username: accounts[0].username,
-                displayName: accounts[0].name
-              }
-            })
-          });
-
-          if (!storeTokenResponse.ok) {
-            throw new Error('Failed to store token in session');
-          }
-
-          const responseData = await storeTokenResponse.json();
-          if (!responseData.success) {
-            throw new Error(responseData.message || 'Failed to store token in session');
-          }
-
-          console.log('Token stored in session successfully');
-
-          // Only proceed to fetch contacts after token is successfully stored
-          console.log('Fetching contacts...');
-          const contactsResponse = await fetch('/api/contacts');
-          if (!contactsResponse.ok) {
-            const errorData = await contactsResponse.json();
-            throw new Error(errorData.error || 'Failed to fetch contacts');
-          }
-
-          const data = await contactsResponse.json();
-          console.log('Contacts fetched successfully:', data.contacts);
-          displayContacts(data.contacts);
-
-        } catch (tokenStoreError) {
-          console.error('Error storing token:', tokenStoreError);
-          throw new Error('Failed to store authentication token. Please try signing in again.');
-        }
+        const data = await contactsResponse.json();
+        console.log('Contacts fetched successfully:', data.contacts);
+        displayContacts(data.contacts);
 
       } catch (error) {
         console.error('Error in loadContacts:', error);
-        if (error instanceof msal.InteractionRequiredAuthError) {
-          console.log('Consent required, redirecting to login...');
-          await msalInstance.loginRedirect({
-            scopes: ['User.Read', 'Chat.Read', 'Chat.ReadWrite', 'Contacts.Read']
-          });
-        } else {
-          // Show user-friendly error message
-          alert('Error: ' + error.message);
-        }
+        // Show user-friendly error message
+        alert('Error: ' + error.message);
+        // Redirect to main page for re-authentication
+        window.location.href = '/';
       }
     }
 
